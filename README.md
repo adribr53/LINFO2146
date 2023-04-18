@@ -8,11 +8,11 @@ Project for the course LINFO2146 with my friends [@Félix](https://github.com/Fe
 - [ ] The **border** assigns a time slot to each **coordinator** node
 - [ ] The **coordinator** will inform the set of **sensor** nodes in its area
 - [ ] The **sensor** sends there counter value to the **external server** via the **border** router
-- [ ] The **sensor** checks if among the parent
+- [ ] The **sensor** checks if among the parents [@Félix](https://github.com/FelixGaudin)
   
-  - [ ] If there is **a coordinator node**, if yes the coordinator node become the parent
-  - [ ] If there is **multiple coordinator nodes**, the sensor node uses the signal strength to decide
-  - [ ] If there are **only sensor nodes**, the node uses the signal strength to decide
+  - [ ] If there is **a coordinator node**, if yes the coordinator node become the parent [@Félix](https://github.com/FelixGaudin)
+  - [ ] If there is **multiple coordinator nodes**, the sensor node uses the signal strength to decide [@Félix](https://github.com/FelixGaudin)
+  - [ ] If there are **only sensor nodes**, the node uses the signal strength to decide [@Félix](https://github.com/FelixGaudin)
 
 - [ ] Connection **border** and **server** [@Adrien](https://github.com/adribr53)
 - [ ] Routing protocol via Unicast/Multicast [@Félix](https://github.com/FelixGaudin)
