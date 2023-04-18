@@ -5,9 +5,9 @@ Project for the course LINFO2146 with my friends [@Félix](https://github.com/Fe
 ## TODO
 
 - [x] The TODO list [@Félix](https://github.com/FelixGaudin)
-- [ ] The **border** assigns a time slot to each **coordinator** node
+- [ ] The **border** assigns a time slot to each **coordinator** node @Adrien
 - [ ] The **coordinator** will inform the set of **sensor** nodes in its area
-- [ ] The **sensor** sends there counter value to the **external server** via the **border** router
+- [ ] The **sensor** sends there counter value to the **external server** via the **border** router @Adrien
 - [ ] The **sensor** checks if among the parent
   
   - [ ] If there is **a coordinator node**, if yes the coordinator node become the parent
