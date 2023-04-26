@@ -41,13 +41,50 @@
 #include "dev/serial-line.h"
 #include "cpu/msp430/dev/uart0.h"
 
+#include "net/netstack.h"
+#include "net/nullnet/nullnet.h"
+
 #include <stdio.h> /* For printf() */
 /*---------------------------------------------------------------------------*/
 PROCESS(test_serial, "Serial line test process");
 AUTOSTART_PROCESSES(&test_serial);
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(test_serial, ev, data)
-{
+
+#define MAX_PAYLOAD_LENGTH 42
+
+typedef enum {
+  SENSOR_NODE = 0,
+  COORDINATOR_NODE = 1,
+  BORDER_NODE = 2,
+  UNDEFINED_NODE = 3
+} node_type;
+
+typedef enum {
+  DISCOVERY_TYPE = 0,
+  MESSAGE_TYPE = 1,
+} packet_type;
+
+typedef struct packet {
+  node_type type;
+  node_type snd;
+  uint8_t payload[MAX_PAYLOAD_LENGTH];
+} packet_t;
+
+#define OWN_TYPE COORDINATOR_NODE
+
+packet_t to_send;
+
+nullnet_buf = (uint8_t *)&to_send;
+nullnet_len = sizeof(packet_t);
+
+void send_discovery() {
+  to_send.type    = DISCOVERY_TYPE;
+  to_send.snd     = OWN_TYPE;
+  for (uint8_t i = 0; i < MAX_PAYLOAD_LENGTH; i++) to_send.payload[i] = 0;
+  NETSTACK_NETWORK.output(NULL);
+}
+
+PROCESS_THREAD(test_serial, ev, data) {
 
   //static struct etimer timer;
 

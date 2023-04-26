@@ -76,6 +76,10 @@ typedef struct packet {
 
 static linkaddr_t parent;
 struct etimer parent_last_update; // TODO: maybe another type
+packet_t to_send;
+
+nullnet_buf = (uint8_t *)&to_send;
+nullnet_len = sizeof(packet_t);
 
 void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const linkaddr_t *dest) {
   if (!linkaddr_cmp(src, &linkaddr_node_addr) && len == sizeof(packet_t)) {
@@ -85,7 +89,8 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
     {
     case DISCOVERY_TYPE:
       if (pkt.snd == BORDER_NODE) {
-        // TODO: parent = src
+        parent = *src; // TODO: working ?
+        // TODO: parent_last_update = now()
       } // else discard
       break;
     case MESSAGE_TYPE:
@@ -98,7 +103,21 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
   }
 }
 
+void send_discovery() {
+  to_send.type    = DISCOVERY_TYPE;
+  to_send.snd     = OWN_TYPE;
+  for (uint8_t i = 0; i < MAX_PAYLOAD_LENGTH; i++) to_send.payload[i] = 0;
+  NETSTACK_NETWORK.output(NULL);
+}
 
+void send_message(linkaddr_t *dst, uint8_t *msg, uint8_t msg_size) {
+  to_send.type = MESSAGE_TYPE;
+  to_send.snd  = OWN_TYPE;
+  uint8_t i;
+  for (i = 0; i < MAX_PAYLOAD_LENGTH; i++) to_send.payload[i] = 0;
+  for (i = 0; i < msg_size; i++) to_send.payload[i] = msg[i];
+  NETSTACK_NETWORK.output(dst);
+}
 
 PROCESS_THREAD(test_serial, ev, data) {
 
