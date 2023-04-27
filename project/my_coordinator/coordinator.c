@@ -43,6 +43,7 @@
 
 #include "net/netstack.h"
 #include "net/nullnet/nullnet.h"
+#include "dev/button-sensor.h"
 
 #include <stdio.h> /* For printf() */
 
@@ -85,6 +86,9 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
   if (!linkaddr_cmp(src, &linkaddr_node_addr) && len == sizeof(packet_t)) {
     packet_t pkt;
     memcpy(&pkt, data, sizeof(packet_t));
+    LOG_INFO("Received from ");
+    LOG_INFO_LLADDR(src);
+    LOG_INFO_("\n");
     switch (pkt.type)
     {
     case DISCOVERY_TYPE:
@@ -133,6 +137,8 @@ PROCESS_THREAD(test_serial, ev, data) {
   //etimer_set(&timer, CLOCK_SECOND * 1000);
   printf("Starting process\n");
   while(1) {
+    PROCESS_WAIT_EVENT_UNTIL((ev == sensors_event) && (data == &button_sensor));
+    send_discovery()
     // TODO : send discovery when actived
   }
 

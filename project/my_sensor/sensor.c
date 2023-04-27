@@ -42,7 +42,6 @@
 #include "cpu/msp430/dev/uart0.h"
 #include "net/netstack.h"
 #include "net/nullnet/nullnet.h"
-#include "coucou.h"
 
 #include "dev/button-sensor.h"
 
@@ -84,13 +83,20 @@ radio_value_t  parent_strength;
 struct etimer parent_last_update;
 packet_t to_send;
 
-nullnet_buf = (uint8_t*) &to_send;
+nullnet_buf = (uint8_t *) &to_send;
 nullnet_len = sizeof(packet_t);
+
+radio_value_t get_strength() {
+  return 42;
+}
 
 void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const linkaddr_t *dest) {
   if (!linkaddr_cmp(src, &linkaddr_node_addr) && len == sizeof(packet_t)) {
     packet_t pkt;
     memcpy(&pkt, data, sizeof(packet_t));
+    LOG_INFO("Received from ");
+    LOG_INFO_LLADDR(src);
+    LOG_INFO_("\n");
     if (pkt.type == DISCOVERY_TYPE) {
       if (pkt.snd == COORDINATOR_NODE) {
           if (parent_type != COORDINATOR_NODE) {
@@ -105,7 +111,7 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
               radio_value_t new_strength = get_strength();
               if (new_strength > parent_strength) {
                 parent = *src; // TODO: working ?
-                parent_strength = new_strength
+                parent_strength = new_strength;
                 // TODO: parent_last_update = now()
               }
           }
@@ -159,6 +165,7 @@ PROCESS_THREAD(test_serial, ev, data) {
   printf("Starting process\n");
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL((ev == sensors_event) && (data == &button_sensor));
+    send_discovery()
     // TODO: Wait timer 
     // To send discovery & send data to parent
     // memcpy(nullnet_buf, &msg, sizeof(count));
