@@ -45,11 +45,16 @@
 #include "net/nullnet/nullnet.h"
 #include "dev/button-sensor.h"
 
-#include <stdio.h> /* For printf() */
+#include <stdlib.h>
+#include <string.h>
+#include <radio.h>
 
+#include "sys/log.h"
+#define LOG_MODULE "App"
+#define LOG_LEVEL LOG_LEVEL_INFO
 /*---------------------------------------------------------------------------*/
-PROCESS(test_serial, "Coordinator node");
-AUTOSTART_PROCESSES(&test_serial);
+PROCESS(nullnet_example_process, "Coordinator node");
+AUTOSTART_PROCESSES(&nullnet_example_process);
 /*---------------------------------------------------------------------------*/
 
 #define MAX_PAYLOAD_LENGTH 42
@@ -76,11 +81,8 @@ typedef struct packet {
 #define OWN_TYPE COORDINATOR_NODE
 
 static linkaddr_t parent;
-struct etimer parent_last_update; // TODO: maybe another type
+// struct etimer parent_last_update; // TODO: maybe another type
 packet_t to_send;
-
-nullnet_buf = (uint8_t *)&to_send;
-nullnet_len = sizeof(packet_t);
 
 void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const linkaddr_t *dest) {
   if (!linkaddr_cmp(src, &linkaddr_node_addr) && len == sizeof(packet_t)) {
@@ -92,13 +94,18 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
     switch (pkt.type)
     {
     case DISCOVERY_TYPE:
+      LOG_INFO("Discovery\n");
       if (pkt.snd == BORDER_NODE) {
-        parent = *src; // TODO: working ?
+        memcpy(&parent, src, sizeof(linkaddr_t));
         // TODO: parent_last_update = now()
-      } // else discard
+      } else {
+        if (pkt.snd == SENSOR_NODE) LOG_INFO("From sensor\n");
+        if (pkt.snd == COORDINATOR_NODE) LOG_INFO("From coordinator\n");
+      }
       break;
     case MESSAGE_TYPE:
       // If have parent => fw
+      LOG_INFO("Message\n");
       break;
     default:
       // Discard
@@ -107,38 +114,29 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
   }
 }
 
-void send_discovery() {
-  to_send.type    = DISCOVERY_TYPE;
-  to_send.snd     = OWN_TYPE;
-  for (uint8_t i = 0; i < MAX_PAYLOAD_LENGTH; i++) to_send.payload[i] = 0;
-  NETSTACK_NETWORK.output(NULL);
-}
-
-void send_message(linkaddr_t *dst, uint8_t *msg, uint8_t msg_size) {
-  to_send.type = MESSAGE_TYPE;
-  to_send.snd  = OWN_TYPE;
-  uint8_t i;
-  for (i = 0; i < MAX_PAYLOAD_LENGTH; i++) to_send.payload[i] = 0;
-  for (i = 0; i < msg_size; i++) to_send.payload[i] = msg[i];
-  NETSTACK_NETWORK.output(dst);
-}
-
-PROCESS_THREAD(test_serial, ev, data) {
+PROCESS_THREAD(nullnet_example_process, ev, data) {
 
   //static struct etimer timer;
 
   PROCESS_BEGIN();
-
+  SENSORS_ACTIVATE(button_sensor);
+  static packet_t discorvery_pkt;
+  discorvery_pkt.snd = OWN_TYPE;
+  discorvery_pkt.type = DISCOVERY_TYPE;
   /* Initialize NullNet */
-  nullnet_buf = NULL;
-  nullnet_len = 0;
+  nullnet_buf = (uint8_t *)&discorvery_pkt;
+  nullnet_len = sizeof(packet_t);
   nullnet_set_input_callback(input_callback);
 
   //etimer_set(&timer, CLOCK_SECOND * 1000);
   printf("Starting process\n");
+  LOG_INFO("Type : Coordinator\n");
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL((ev == sensors_event) && (data == &button_sensor));
-    send_discovery()
+    LOG_INFO("Sending discovery broadcast\n");
+    nullnet_buf = (uint8_t *)&discorvery_pkt;
+    nullnet_len = sizeof(packet_t);
+    NETSTACK_NETWORK.output(NULL);
     // TODO : send discovery when actived
   }
 
