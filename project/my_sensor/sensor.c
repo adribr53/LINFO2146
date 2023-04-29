@@ -10,8 +10,10 @@
 #include <stdio.h> /* For printf() */
 
 #include <stdlib.h>
+#include <limits.h>
 #include <string.h>
 #include <radio.h>
+#include <arch/dev/radio/cc2420/cc2420.h>
 
 #include "sys/log.h"
 #define LOG_MODULE "App"
@@ -49,8 +51,16 @@ radio_value_t  parent_strength;
 struct etimer parent_last_update;
 static packet_t to_send;
 
+static const struct radio_driver *radio = &cc2420_driver;
+
 radio_value_t get_strength() {
-  return 42;
+  radio_value_t strength = 0;
+  radio_result_t res = radio->get_value(RADIO_PARAM_LAST_RSSI, &strength);
+  if (res != RADIO_RESULT_OK) {
+    return INT_MIN;
+  } else {
+    return strength;
+  }
 }
 
 void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const linkaddr_t *dest) {
@@ -60,14 +70,15 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
     LOG_INFO("Received from ");
     LOG_INFO_LLADDR(src);
     LOG_INFO_("\n");
+    radio_value_t strength = get_strength();
+    printf("Strenght >>> %d\n", strength);
     if (pkt.type == DISCOVERY_TYPE) {
       LOG_INFO("Discovery\n");
       if (pkt.snd == COORDINATOR_NODE) {
-          LOG_INFO("Discovery + coordinator\n");
           if (parent_type != COORDINATOR_NODE) {
             // old parent : unkown or sensor
             memcpy(&parent, src, sizeof(linkaddr_t));
-            LOG_INFO("New parent :");
+            LOG_INFO("New parent : coordinator");
             LOG_INFO_LLADDR(&parent);
             LOG_INFO("\n");
             parent_type = COORDINATOR_NODE;
@@ -77,8 +88,11 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
               // compare strengt
               radio_value_t new_strength = get_strength();
               if (new_strength > parent_strength) {
-                parent = *src; // TODO: working ?
+                memcpy(&parent, src, sizeof(linkaddr_t));
                 parent_strength = new_strength;
+                LOG_INFO("New parent : coordinator with higher signal strength :");
+                LOG_INFO_LLADDR(&parent);
+                LOG_INFO("\n");
                 // TODO: parent_last_update = now()
               }
           }
@@ -89,14 +103,17 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
                   // already have a parent
                   radio_value_t new_strength = get_strength();
                   if (new_strength > parent_strength) {
-                    parent = *src; // TODO: working ?
+                    memcpy(&parent, src, sizeof(linkaddr_t));
                     parent_strength = new_strength;
+                    LOG_INFO("New parent : sensor with higher signal strength :");
+                    LOG_INFO_LLADDR(&parent);
+                    LOG_INFO("\n");
                     // TODO: parent_last_update = now()
                   }
               } else {
-                  LOG_INFO("Discovery + sensor : new parent\n");
+                  // LOG_INFO("Discovery + sensor : new parent\n");
                   memcpy(&parent, src, sizeof(linkaddr_t));
-                  LOG_INFO("New parent :");
+                  LOG_INFO("New parent : sensor");
                   LOG_INFO_LLADDR(&parent);
                   LOG_INFO("\n");
                   parent_type = SENSOR_NODE;
