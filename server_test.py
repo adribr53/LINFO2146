@@ -15,10 +15,12 @@ def main(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((ip, port))
 
-    for _ in range(20): 
-        sock.send(b"test\n")
+    while True: 
+        sock.send(b"ihate")
         data = recv(sock)
+        print(data)
         print(data.decode("utf-8"))
+        print("=====")
         time.sleep(1)
 
 
