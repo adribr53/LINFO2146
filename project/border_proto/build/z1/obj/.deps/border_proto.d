@@ -11,7 +11,8 @@ build/z1/obj/border_proto.o: border_proto.c ../../os/contiki.h \
  ../../os/sys/pt.h ../../os/sys/clock.h ../../os/net/netstack.h \
  ../../os/net/mac/mac.h ../../os/dev/radio.h \
  ../../os/net/mac/framer/framer.h ../../os/net/linkaddr.h \
- ../../os/net/nullnet/nullnet.h ../../os/sys/log.h \
+ ../../os/net/nullnet/nullnet.h ../../os/dev/serial-line.h \
+ ../../arch/cpu/msp430/dev/uart0.h ../../os/sys/log.h \
  ../../os/sys/log-conf.h
 
 ../../os/contiki.h:
@@ -75,6 +76,10 @@ build/z1/obj/border_proto.o: border_proto.c ../../os/contiki.h \
 ../../os/net/linkaddr.h:
 
 ../../os/net/nullnet/nullnet.h:
+
+../../os/dev/serial-line.h:
+
+../../arch/cpu/msp430/dev/uart0.h:
 
 ../../os/sys/log.h:
 
