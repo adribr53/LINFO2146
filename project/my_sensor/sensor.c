@@ -47,6 +47,7 @@ static node_type parent_type = UNDEFINED_NODE;
 // static linkaddr_t* child_nodes;
 radio_value_t  parent_strength;
 struct etimer parent_last_update;
+static packet_t to_send;
 
 radio_value_t get_strength() {
   return 42;
@@ -106,6 +107,13 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
       } // else border or bug
     } else if (pkt.type == MESSAGE_TYPE) {
       LOG_INFO("Message\n");
+      if (parent_type != UNDEFINED_NODE) { // security check
+        LOG_INFO("Fowarding to ");
+        LOG_INFO_LLADDR(&parent);
+        LOG_INFO("\n");
+        memcpy(&to_send, &pkt, sizeof(packet_t));
+        NETSTACK_NETWORK.output(&parent);
+      }
     }
   }
 }
@@ -115,35 +123,26 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
 
   PROCESS_BEGIN();
   SENSORS_ACTIVATE(button_sensor);
-  static packet_t discorvery_pkt;
-  discorvery_pkt.snd = OWN_TYPE;
-  discorvery_pkt.type = DISCOVERY_TYPE;
-  static packet_t msg_pkt;
-  msg_pkt.snd = OWN_TYPE;
-  msg_pkt.type = MESSAGE_TYPE;
-  static uint16_t iterator;
-  for (iterator = 0; iterator < MAX_PAYLOAD_LENGTH; iterator++) msg_pkt.payload[iterator] = 0;
   /* Initialize NullNet */
-  nullnet_buf = (uint8_t *)&discorvery_pkt;
+  nullnet_buf = (uint8_t *)&to_send;
   nullnet_len = sizeof(packet_t);
   nullnet_set_input_callback(input_callback);
 
-  //etimer_set(&timer, CLOCK_SECOND * 1000);
   printf("Starting process\n");
+  LOG_INFO("Type : Sensor\n");
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL((ev == sensors_event) && (data == &button_sensor));
     // send_discovery();
+    to_send.snd = OWN_TYPE;
     if (parent_type == UNDEFINED_NODE) {
       LOG_INFO("Sending discovery broadcast\n");
-      nullnet_buf = (uint8_t *)&discorvery_pkt;
-      nullnet_len = sizeof(packet_t);
+      to_send.type = DISCOVERY_TYPE;
       NETSTACK_NETWORK.output(NULL);
     } else {
       LOG_INFO("Sending message to");
       LOG_INFO_LLADDR(&parent);
       LOG_INFO("\n");
-      nullnet_buf = (uint8_t *) &msg_pkt;
-      nullnet_len = sizeof(packet_t);
+      to_send.type = MESSAGE_TYPE;
       NETSTACK_NETWORK.output(&parent);
     }
   }

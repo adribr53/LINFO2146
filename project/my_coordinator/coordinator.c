@@ -130,6 +130,7 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
 
   //etimer_set(&timer, CLOCK_SECOND * 1000);
   printf("Starting process\n");
+  LOG_INFO("Type : Coordinator\n");
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL((ev == sensors_event) && (data == &button_sensor));
     LOG_INFO("Sending discovery broadcast\n");
