@@ -31,36 +31,73 @@ typedef enum {
 typedef enum {
   DISCOVERY_TYPE = 0,
   MESSAGE_TYPE = 1,
+  SYNCHRO_TYPE = 2
 } packet_type;
 
 typedef struct packet {
   node_type node : 2;
-  packet_type msg : 1;
-  uint8_t payload : 5;
+  packet_type msg : 2;
+  unsigned payload : 12;
 } packet_t;
 
-static uint8_t server_count = 0;
+static uint8_t count = 0;
+
+static packet_t my_pkt;
+
+static linkaddr_t children[5]; // TODO resize if necessary
+static unsigned next_index = 0;
+
 /*---------------------------------------------------------------------------*/
 PROCESS(nullnet_example_process, "NullNet broadcast example");
 AUTOSTART_PROCESSES(&nullnet_example_process);
+
+void send_pkt(node_type node, packet_type type, unsigned payload, linkaddr_t *dest) {
+  my_pkt.node = node;
+  my_pkt.msg = type;
+  my_pkt.payload = payload;
+  memcpy(nullnet_buf, &my_pkt, sizeof(my_pkt));
+  nullnet_len = sizeof(my_pkt);        
+  NETSTACK_NETWORK.output(dest); 
+}
 
 /*---------------------------------------------------------------------------*/
 void input_callback(const void *data, uint16_t len,
   const linkaddr_t *src, const linkaddr_t *dest)
 {
   if(len == sizeof(packet_t)) {    
+    LOG_INFO("Received from ");
+    LOG_INFO_LLADDR(src);
+    LOG_INFO_("\n");
     packet_t recv_pkt;
     memcpy(&recv_pkt, data, sizeof(recv_pkt));
-    if (recv_pkt.node==COORDINATOR_NODE) {
-        if (recv_pkt.msg==DISCOVERY_TYPE) {
-            LOG_INFO("Some coordinator wants to join me !");
-        } else {
-            server_count++; // simple for now
-            LOG_INFO("Some coordinator wants to send me data");
-        }
-    } else {
-        LOG_INFO("Received %u from not coord", recv_pkt.payload);
-    }    
+
+    switch (recv_pkt.node)
+    {
+    case COORDINATOR_NODE:
+      switch (recv_pkt.msg)
+      {
+      case DISCOVERY_TYPE:
+        LOG_INFO("A coordinator wants to join");
+        children[next_index++] = *src;
+        static linkaddr_t coordinator;
+        coordinator.u8[0] = src->u8[0];
+        coordinator.u8[1] = src->u8[1];
+        // todo : send slot
+        send_pkt(BORDER_NODE, DISCOVERY_TYPE, 0, &coordinator);
+        break;      
+      case MESSAGE_TYPE:
+        LOG_INFO("A coordinator sent some data");
+        count += recv_pkt.payload;
+      case SYNCHRO_TYPE:
+        LOG_INFO("A coordinator sent some clock");
+      default:
+        break;
+      }
+      break;    
+    default:
+      LOG_INFO("Msg from node that ain't coordinator");
+      break;
+    }   
   } else {
     LOG_INFO_("data of unadequate size");
   }
@@ -71,11 +108,12 @@ void input_callback(const void *data, uint16_t len,
 PROCESS_THREAD(nullnet_example_process, ev, data)
 {
   static struct etimer periodic_timer;  
-  static packet_t discovery_pkt;
+  static packet_t my_pkt;
   static unsigned count = 0;  
   
-  discovery_pkt.node = BORDER_NODE;
-  discovery_pkt.msg = DISCOVERY_TYPE;
+  my_pkt.node = BORDER_NODE;
+  my_pkt.msg = DISCOVERY_TYPE;
+
   PROCESS_BEGIN();
 
 #if MAC_CONF_WITH_TSCH
@@ -83,27 +121,25 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
 #endif /* MAC_CONF_WITH_TSCH */
 
   /* Initialize NullNet */
-  nullnet_buf = (uint8_t *)&discovery_pkt;
-  nullnet_len = sizeof(discovery_pkt);
+  nullnet_buf = (void *)&my_pkt;
+  nullnet_len = sizeof(my_pkt);
   nullnet_set_input_callback(input_callback);
 
   etimer_set(&periodic_timer, SEND_INTERVAL);
   while(1) {
     /* SEND SIGNALING MSG "I AM THE BORDER" */
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
-    LOG_INFO("Sending pkt of type %u with payload %u to ", discovery_pkt.node, discovery_pkt.payload);
+    LOG_INFO("Border signalling its existence \n");
     LOG_INFO_LLADDR(NULL);
-    LOG_INFO_("\n");
         
-    memcpy(nullnet_buf, &discovery_pkt, sizeof(discovery_pkt));
-    nullnet_len = sizeof(discovery_pkt);
+    memcpy(nullnet_buf, &my_pkt, sizeof(my_pkt));
+    nullnet_len = sizeof(my_pkt);
 
     NETSTACK_NETWORK.output(NULL);
-    discovery_pkt.payload++;
 
     /* SEND DATA TO SERVER */
     printf("%u\n", count); 
-    count = count + 1;
+    count = 0;
     /* RESET TIMER */
     etimer_reset(&periodic_timer);
   }
