@@ -48,8 +48,7 @@ static linkaddr_t parent;
 static unsigned has_parent = 0;
 
 static clock_time_t network_clock = 0;
-static clock_time_t prev_clock = 0;
-static clock_time_t cur_clock = 0;
+static clock_time_t clock_at_bc = 0;
 static clock_time_t duration;
 static clock_time_t wait_slot;
 
@@ -125,9 +124,10 @@ void input_callback(const void *data, uint16_t len,
             //  LOG_INFO("Not the first time");
               // todo send clock                
               if (network_clock>0) { // node has a say
-                prev_clock = cur_clock; // was set last when receiving a clock from border
-                cur_clock = clock_time();
-                send_pkt(COORDINATOR_NODE, SYNCHRO_TYPE, 0, network_clock+cur_clock-prev_clock, &border);
+                // was set last when receiving a clock from border
+                clock_time_t clock_at_recomp = clock_time();
+                LOG_INFO("recomp : %lu bc :%lu\n", clock_at_recomp, clock_at_bc);
+                send_pkt(COORDINATOR_NODE, SYNCHRO_TYPE, 0, network_clock+clock_at_recomp-clock_at_bc, &border);
               }
             }
           } else { // coordinator was given a slot !
@@ -166,11 +166,11 @@ void input_callback(const void *data, uint16_t len,
       break;
     case SYNCHRO_TYPE:
       if (has_parent) {
-        cur_clock = clock_time();
+        clock_at_bc =  clock_time();
         //LOG_INFO("received his clock");
         // todo : clock management
         // static struct etimer synchro_timer;      
-        network_clock = pkt.clock;
+        network_clock = pkt.clock;        
         //set_wait();
         received_clock = 1;      
         process_poll(&nullnet_example_process);

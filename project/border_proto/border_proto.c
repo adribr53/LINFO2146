@@ -51,8 +51,8 @@ static clock_time_t children_clocks[5];
 static unsigned next_index = 0;
 
 static clock_time_t network_clock = 0;
-static clock_time_t prev_clock = 0;
-static clock_time_t cur_clock = 0;
+static clock_time_t clock_at_bc = 0;
+
 /*---------------------------------------------------------------------------*/
 PROCESS(nullnet_example_process, "NullNet broadcast example");
 AUTOSTART_PROCESSES(&nullnet_example_process);
@@ -83,18 +83,18 @@ void handle_synchro() {
     if (children_clocks[i]>0) {
       unsigned long top = (unsigned long)children_clocks[i];
       LOG_INFO("children clock %lu %lu\n", top, PERIOD);
-      avg_delta += network_clock - children_clocks[i];      
+      avg_delta += children_clocks[i] - network_clock;      
       cnt_clocks++;
       children_clocks[i]=0; // reset
     }
   }  
   // include border in the computation
-  prev_clock = cur_clock;
-  cur_clock = clock_time();
+  clock_time_t clock_at_recomp = clock_time();
   
   avg_delta = avg_delta / cnt_clocks;
-  LOG_INFO("avg delta %ld, cnt clocks %u, cur_clock %lu, prev_clock %lu", avg_delta, cnt_clocks, cur_clock, prev_clock);
-  network_clock = network_clock + avg_delta + (cur_clock-prev_clock); 
+  LOG_INFO("avg delta %ld, cnt clocks %u, cur_clock %lu, prev_clock %lu\n", avg_delta, cnt_clocks, clock_at_recomp, clock_at_bc);  
+  network_clock = network_clock + avg_delta + (clock_at_recomp-clock_at_bc); 
+  LOG_INFO("NEW netclock :%lu\n", network_clock);
 }
 
 unsigned get_slot() {
@@ -180,16 +180,14 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
     LOG_INFO("Border signalling its existence \n");
     LOG_INFO_LLADDR(NULL);
     send_pkt(BORDER_NODE, DISCOVERY_TYPE, 0, 0, NULL);       
-    
+    clock_at_bc = clock_time();
     etimer_reset(&periodic_timer);
 
     /* 2) wait for coordinator to respond, then compute the new clock*/
     etimer_set(&periodic_timer, CLOCK_SECOND); 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));        
     handle_synchro();    
-    send_pkt(BORDER_NODE, SYNCHRO_TYPE, 0, network_clock, NULL);
-    
-    cur_clock = clock_time();
+    send_pkt(BORDER_NODE, SYNCHRO_TYPE, 0, network_clock, NULL);        
 
     LOG_INFO("Current time: %lu ticks\n", (unsigned long)network_clock);
 
