@@ -76,14 +76,14 @@ void register_clock(linkaddr_t child, clock_time_t clock_child) {
 }
 
 void handle_synchro() {
-  clock_time_t avg_clock = 0;
-  unsigned cnt_clocks = 0;
+  long signed avg_delta = 0;
+  unsigned cnt_clocks = 1; // count the diff of border with itself
   LOG_INFO("call to handle_synchro gives next_time %u\n", next_index);
   for (int i=0; i<next_index; i++) {
     if (children_clocks[i]>0) {
       unsigned long top = (unsigned long)children_clocks[i];
-      LOG_INFO("children clock %lu\n", top);
-      avg_clock = avg_clock + children_clocks[i];      
+      LOG_INFO("children clock %lu %lu\n", top, PERIOD);
+      avg_delta += network_clock - children_clocks[i];      
       cnt_clocks++;
       children_clocks[i]=0; // reset
     }
@@ -91,12 +91,10 @@ void handle_synchro() {
   // include border in the computation
   prev_clock = cur_clock;
   cur_clock = clock_time();
-  avg_clock = avg_clock + network_clock + cur_clock - prev_clock;
-  cnt_clocks++;
-
-  avg_clock = avg_clock / cnt_clocks;
-
-  network_clock = cur_clock + (avg_clock-prev_clock); 
+  
+  avg_delta = avg_delta / cnt_clocks;
+  LOG_INFO("avg delta %ld, cnt clocks %u, cur_clock %lu, prev_clock %lu", avg_delta, cnt_clocks, cur_clock, prev_clock);
+  network_clock = network_clock + avg_delta + (cur_clock-prev_clock); 
 }
 
 unsigned get_slot() {
@@ -200,7 +198,10 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
     count = 0;
     /* RESET TIMER */
     etimer_reset(&periodic_timer);
-    etimer_set(&periodic_timer, SEND_INTERVAL);
+
+    clock_time_t remaining_clock =  PERIOD - (network_clock % PERIOD);
+    LOG_INFO("REMAIN time %lu\n", remaining_clock);
+    etimer_set(&periodic_timer, 16*CLOCK_SECOND + remaining_clock); // wait an additional time to not go too fast
   }
 
   PROCESS_END();

@@ -1832,7 +1832,7 @@ LOAD /usr/local/bin/../lib/gcc/msp430/4.7.2/mcpu-430x/mmpy-16/msr20/mc20/libcrt0
 .rela.plt
  *(SORT(.rela.plt))
 
-.text           0x00003100     0x45a8
+.text           0x00003100     0x4486
                 0x00003100                . = ALIGN (0x2)
  *(SORT(.init) SORT(.init.*))
  *(SORT(.init0))
@@ -2097,601 +2097,601 @@ LOAD /usr/local/bin/../lib/gcc/msp430/4.7.2/mcpu-430x/mmpy-16/msr20/mc20/libcrt0
                 0x000044aa       0x58 build/z1/obj/coordinator.o
                 0x000044aa                send_pkt
  .any.text.input_callback
-                0x00004502      0x32c build/z1/obj/coordinator.o
+                0x00004502      0x252 build/z1/obj/coordinator.o
                 0x00004502                input_callback
  .any.text.set_wait_slot_time
-                0x0000482e       0xb0 build/z1/obj/coordinator.o
-                0x0000482e                set_wait_slot_time
+                0x00004754       0x68 build/z1/obj/coordinator.o
+                0x00004754                set_wait_slot_time
  .any.text.process_thread_nullnet_example_process
-                0x000048de       0xe2 build/z1/obj/coordinator.o
+                0x000047bc       0xe2 build/z1/obj/coordinator.o
  .any.text.schedule_transmission
-                0x000049c0       0x66 build/z1/obj/csma-output.o
+                0x0000489e       0x66 build/z1/obj/csma-output.o
  .any.text.tx_done
-                0x00004a26       0x86 build/z1/obj/csma-output.o
+                0x00004904       0x86 build/z1/obj/csma-output.o
  .any.text.transmit_from_queue
-                0x00004aac      0x1b0 build/z1/obj/csma-output.o
+                0x0000498a      0x1b0 build/z1/obj/csma-output.o
  .any.text.csma_output_packet
-                0x00004c5c      0x148 build/z1/obj/csma-output.o
-                0x00004c5c                csma_output_packet
+                0x00004b3a      0x148 build/z1/obj/csma-output.o
+                0x00004b3a                csma_output_packet
  .any.text.csma_output_init
-                0x00004da4       0x1a build/z1/obj/csma-output.o
-                0x00004da4                csma_output_init
+                0x00004c82       0x1a build/z1/obj/csma-output.o
+                0x00004c82                csma_output_init
  .any.text.csma_security_create_frame
-                0x00004dbe       0x10 build/z1/obj/csma-security.o
-                0x00004dbe                csma_security_create_frame
+                0x00004c9c       0x10 build/z1/obj/csma-security.o
+                0x00004c9c                csma_security_create_frame
  .any.text.csma_security_parse_frame
-                0x00004dce        0x6 build/z1/obj/csma-security.o
-                0x00004dce                csma_security_parse_frame
- .any.text.on   0x00004dd4        0x6 build/z1/obj/csma.o
- .any.text.off  0x00004dda        0x6 build/z1/obj/csma.o
+                0x00004cac        0x6 build/z1/obj/csma-security.o
+                0x00004cac                csma_security_parse_frame
+ .any.text.on   0x00004cb2        0x6 build/z1/obj/csma.o
+ .any.text.off  0x00004cb8        0x6 build/z1/obj/csma.o
  .any.text.max_payload
-                0x00004de0       0x38 build/z1/obj/csma.o
+                0x00004cbe       0x38 build/z1/obj/csma.o
  .any.text.send_packet
-                0x00004e18        0x6 build/z1/obj/csma.o
+                0x00004cf6        0x6 build/z1/obj/csma.o
  .any.text.input_packet
-                0x00004e1e       0x58 build/z1/obj/csma.o
+                0x00004cfc       0x58 build/z1/obj/csma.o
  .any.text.init
-                0x00004e76       0x20 build/z1/obj/csma.o
+                0x00004d54       0x20 build/z1/obj/csma.o
  .any.text.process_thread_ctimer_process
-                0x00004e96       0xa0 build/z1/obj/ctimer.o
+                0x00004d74       0xa0 build/z1/obj/ctimer.o
  .any.text.ctimer_init
-                0x00004f36       0x18 build/z1/obj/ctimer.o
-                0x00004f36                ctimer_init
+                0x00004e14       0x18 build/z1/obj/ctimer.o
+                0x00004e14                ctimer_init
  .any.text.ctimer_set_with_process
-                0x00004f4e       0x4a build/z1/obj/ctimer.o
-                0x00004f4e                ctimer_set_with_process
+                0x00004e2c       0x4a build/z1/obj/ctimer.o
+                0x00004e2c                ctimer_set_with_process
  .any.text.ctimer_set
-                0x00004f98       0x10 build/z1/obj/ctimer.o
-                0x00004f98                ctimer_set
+                0x00004e76       0x10 build/z1/obj/ctimer.o
+                0x00004e76                ctimer_set
  .any.text.ctimer_stop
-                0x00004fa8       0x28 build/z1/obj/ctimer.o
-                0x00004fa8                ctimer_stop
+                0x00004e86       0x28 build/z1/obj/ctimer.o
+                0x00004e86                ctimer_stop
  .any.text.energest_init
-                0x00004fd0        0x2 build/z1/obj/energest.o
-                0x00004fd0                energest_init
+                0x00004eae        0x2 build/z1/obj/energest.o
+                0x00004eae                energest_init
  .any.text.energest_flush
-                0x00004fd2        0x2 build/z1/obj/energest.o
-                0x00004fd2                energest_flush
+                0x00004eb0        0x2 build/z1/obj/energest.o
+                0x00004eb0                energest_flush
  .any.text.update_time
-                0x00004fd4       0x70 build/z1/obj/etimer.o
+                0x00004eb2       0x70 build/z1/obj/etimer.o
  .any.text.etimer_request_poll
-                0x00005044        0xa build/z1/obj/etimer.o
-                0x00005044                etimer_request_poll
+                0x00004f22        0xa build/z1/obj/etimer.o
+                0x00004f22                etimer_request_poll
  .any.text.process_thread_etimer_process
-                0x0000504e       0xc4 build/z1/obj/etimer.o
+                0x00004f2c       0xc4 build/z1/obj/etimer.o
  .any.text.add_timer
-                0x00005112       0x40 build/z1/obj/etimer.o
+                0x00004ff0       0x40 build/z1/obj/etimer.o
  .any.text.etimer_set
-                0x00005152       0x12 build/z1/obj/etimer.o
-                0x00005152                etimer_set
+                0x00005030       0x12 build/z1/obj/etimer.o
+                0x00005030                etimer_set
  .any.text.etimer_reset
-                0x00005164       0x12 build/z1/obj/etimer.o
-                0x00005164                etimer_reset
+                0x00005042       0x12 build/z1/obj/etimer.o
+                0x00005042                etimer_reset
  .any.text.etimer_expired
-                0x00005176        0xe build/z1/obj/etimer.o
-                0x00005176                etimer_expired
+                0x00005054        0xe build/z1/obj/etimer.o
+                0x00005054                etimer_expired
  .any.text.etimer_pending
-                0x00005184        0xc build/z1/obj/etimer.o
-                0x00005184                etimer_pending
+                0x00005062        0xc build/z1/obj/etimer.o
+                0x00005062                etimer_pending
  .any.text.etimer_next_expiration_time
-                0x00005190       0x16 build/z1/obj/etimer.o
-                0x00005190                etimer_next_expiration_time
+                0x0000506e       0x16 build/z1/obj/etimer.o
+                0x0000506e                etimer_next_expiration_time
  .any.text.etimer_stop
-                0x000051a6       0x3e build/z1/obj/etimer.o
-                0x000051a6                etimer_stop
+                0x00005084       0x3e build/z1/obj/etimer.o
+                0x00005084                etimer_stop
  .any.text.frame802154_get_pan_id
-                0x000051e4        0x6 build/z1/obj/frame802154.o
-                0x000051e4                frame802154_get_pan_id
+                0x000050c2        0x6 build/z1/obj/frame802154.o
+                0x000050c2                frame802154_get_pan_id
  .any.text.frame802154_has_panid
-                0x000051ea       0xe0 build/z1/obj/frame802154.o
-                0x000051ea                frame802154_has_panid
+                0x000050c8       0xe0 build/z1/obj/frame802154.o
+                0x000050c8                frame802154_has_panid
  .any.text.field_len
-                0x000052ca       0xa8 build/z1/obj/frame802154.o
+                0x000051a8       0xa8 build/z1/obj/frame802154.o
  .any.text.frame802154_is_broadcast_addr
-                0x00005372       0x28 build/z1/obj/frame802154.o
-                0x00005372                frame802154_is_broadcast_addr
+                0x00005250       0x28 build/z1/obj/frame802154.o
+                0x00005250                frame802154_is_broadcast_addr
  .any.text.frame802154_hdrlen
-                0x0000539a       0x32 build/z1/obj/frame802154.o
-                0x0000539a                frame802154_hdrlen
+                0x00005278       0x32 build/z1/obj/frame802154.o
+                0x00005278                frame802154_hdrlen
  .any.text.frame802154_create_fcf
-                0x000053cc       0x6e build/z1/obj/frame802154.o
-                0x000053cc                frame802154_create_fcf
+                0x000052aa       0x6e build/z1/obj/frame802154.o
+                0x000052aa                frame802154_create_fcf
  .any.text.frame802154_create
-                0x0000543a       0xd4 build/z1/obj/frame802154.o
-                0x0000543a                frame802154_create
+                0x00005318       0xd4 build/z1/obj/frame802154.o
+                0x00005318                frame802154_create
  .any.text.frame802154_parse_fcf
-                0x0000550e       0x8c build/z1/obj/frame802154.o
-                0x0000550e                frame802154_parse_fcf
+                0x000053ec       0x8c build/z1/obj/frame802154.o
+                0x000053ec                frame802154_parse_fcf
  .any.text.frame802154_parse
-                0x0000559a      0x15c build/z1/obj/frame802154.o
-                0x0000559a                frame802154_parse
+                0x00005478      0x15c build/z1/obj/frame802154.o
+                0x00005478                frame802154_parse
  .any.text.parse
-                0x000056f6       0x9e build/z1/obj/framer-802154.o
+                0x000055d4       0x9e build/z1/obj/framer-802154.o
  .any.text.framer_802154_setup_params
-                0x00005794       0xb0 build/z1/obj/framer-802154.o
-                0x00005794                framer_802154_setup_params
+                0x00005672       0xb0 build/z1/obj/framer-802154.o
+                0x00005672                framer_802154_setup_params
  .any.text.create_frame
-                0x00005844       0x9e build/z1/obj/framer-802154.o
+                0x00005722       0x9e build/z1/obj/framer-802154.o
  .any.text.create
-                0x000058e2        0x8 build/z1/obj/framer-802154.o
+                0x000057c0        0x8 build/z1/obj/framer-802154.o
  .any.text.hdr_length
-                0x000058ea        0x8 build/z1/obj/framer-802154.o
+                0x000057c8        0x8 build/z1/obj/framer-802154.o
  .any.text.i2c_receiveinit
-                0x000058f2       0x36 build/z1/obj/i2cmaster.o
-                0x000058f2                i2c_receiveinit
+                0x000057d0       0x36 build/z1/obj/i2cmaster.o
+                0x000057d0                i2c_receiveinit
  .any.text.i2c_transmitinit
-                0x00005928       0x30 build/z1/obj/i2cmaster.o
-                0x00005928                i2c_transmitinit
+                0x00005806       0x30 build/z1/obj/i2cmaster.o
+                0x00005806                i2c_transmitinit
  .any.text.i2c_receive_n
-                0x00005958       0x3e build/z1/obj/i2cmaster.o
-                0x00005958                i2c_receive_n
+                0x00005836       0x3e build/z1/obj/i2cmaster.o
+                0x00005836                i2c_receive_n
  .any.text.i2c_busy
-                0x00005996        0xa build/z1/obj/i2cmaster.o
-                0x00005996                i2c_busy
+                0x00005874        0xa build/z1/obj/i2cmaster.o
+                0x00005874                i2c_busy
  .any.text.i2c_enable
-                0x000059a0       0x22 build/z1/obj/i2cmaster.o
-                0x000059a0                i2c_enable
+                0x0000587e       0x22 build/z1/obj/i2cmaster.o
+                0x0000587e                i2c_enable
  .any.text.i2c_transmit_n
-                0x000059c2       0x14 build/z1/obj/i2cmaster.o
-                0x000059c2                i2c_transmit_n
+                0x000058a0       0x14 build/z1/obj/i2cmaster.o
+                0x000058a0                i2c_transmit_n
  .any.text.leds_arch_init
-                0x000059d6        0xe build/z1/obj/leds-arch.o
-                0x000059d6                leds_arch_init
+                0x000058b4        0xe build/z1/obj/leds-arch.o
+                0x000058b4                leds_arch_init
  .any.text.leds_arch_get
-                0x000059e4       0x34 build/z1/obj/leds-arch.o
-                0x000059e4                leds_arch_get
+                0x000058c2       0x34 build/z1/obj/leds-arch.o
+                0x000058c2                leds_arch_get
  .any.text.leds_arch_set
-                0x00005a18       0x3e build/z1/obj/leds-arch.o
-                0x00005a18                leds_arch_set
+                0x000058f6       0x3e build/z1/obj/leds-arch.o
+                0x000058f6                leds_arch_set
  .any.text.leds_init
-                0x00005a56        0x6 build/z1/obj/leds.o
-                0x00005a56                leds_init
+                0x00005934        0x6 build/z1/obj/leds.o
+                0x00005934                leds_init
  .any.text.leds_on
-                0x00005a5c       0x12 build/z1/obj/leds.o
-                0x00005a5c                leds_on
+                0x0000593a       0x12 build/z1/obj/leds.o
+                0x0000593a                leds_on
  .any.text.leds_off
-                0x00005a6e       0x12 build/z1/obj/leds.o
-                0x00005a6e                leds_off
+                0x0000594c       0x12 build/z1/obj/leds.o
+                0x0000594c                leds_off
  .any.text.linkaddr_copy
-                0x00005a80        0x8 build/z1/obj/linkaddr.o
-                0x00005a80                linkaddr_copy
+                0x0000595e        0x8 build/z1/obj/linkaddr.o
+                0x0000595e                linkaddr_copy
  .any.text.linkaddr_cmp
-                0x00005a88       0x12 build/z1/obj/linkaddr.o
-                0x00005a88                linkaddr_cmp
+                0x00005966       0x12 build/z1/obj/linkaddr.o
+                0x00005966                linkaddr_cmp
  .any.text.linkaddr_set_node_addr
-                0x00005a9a        0xc build/z1/obj/linkaddr.o
-                0x00005a9a                linkaddr_set_node_addr
+                0x00005978        0xc build/z1/obj/linkaddr.o
+                0x00005978                linkaddr_set_node_addr
  .any.text.list_init
-                0x00005aa6        0x6 build/z1/obj/list.o
-                0x00005aa6                list_init
+                0x00005984        0x6 build/z1/obj/list.o
+                0x00005984                list_init
  .any.text.list_head
-                0x00005aac        0x4 build/z1/obj/list.o
-                0x00005aac                list_head
+                0x0000598a        0x4 build/z1/obj/list.o
+                0x0000598a                list_head
  .any.text.list_tail
-                0x00005ab0       0x12 build/z1/obj/list.o
-                0x00005ab0                list_tail
+                0x0000598e       0x12 build/z1/obj/list.o
+                0x0000598e                list_tail
  .any.text.list_remove
-                0x00005ac2       0x34 build/z1/obj/list.o
-                0x00005ac2                list_remove
+                0x000059a0       0x34 build/z1/obj/list.o
+                0x000059a0                list_remove
  .any.text.list_add
-                0x00005af6       0x26 build/z1/obj/list.o
-                0x00005af6                list_add
+                0x000059d4       0x26 build/z1/obj/list.o
+                0x000059d4                list_add
  .any.text.list_length
-                0x00005b1c       0x10 build/z1/obj/list.o
-                0x00005b1c                list_length
+                0x000059fa       0x10 build/z1/obj/list.o
+                0x000059fa                list_length
  .any.text.list_item_next
-                0x00005b2c        0xc build/z1/obj/list.o
-                0x00005b2c                list_item_next
+                0x00005a0a        0xc build/z1/obj/list.o
+                0x00005a0a                list_item_next
  .any.text.log_lladdr
-                0x00005b38       0x40 build/z1/obj/log.o
-                0x00005b38                log_lladdr
+                0x00005a16       0x40 build/z1/obj/log.o
+                0x00005a16                log_lladdr
  .any.text.mac_sequence_init
-                0x00005b78        0xa build/z1/obj/mac-sequence.o
-                0x00005b78                mac_sequence_init
+                0x00005a56        0xa build/z1/obj/mac-sequence.o
+                0x00005a56                mac_sequence_init
  .any.text.mac_sequence_set_dsn
-                0x00005b82       0x18 build/z1/obj/mac-sequence.o
-                0x00005b82                mac_sequence_set_dsn
+                0x00005a60       0x18 build/z1/obj/mac-sequence.o
+                0x00005a60                mac_sequence_set_dsn
  .any.text.mac_sequence_is_duplicate
-                0x00005b9a       0x6e build/z1/obj/mac-sequence.o
-                0x00005b9a                mac_sequence_is_duplicate
+                0x00005a78       0x6e build/z1/obj/mac-sequence.o
+                0x00005a78                mac_sequence_is_duplicate
  .any.text.mac_sequence_register_seqno
-                0x00005c08       0x86 build/z1/obj/mac-sequence.o
-                0x00005c08                mac_sequence_register_seqno
+                0x00005ae6       0x86 build/z1/obj/mac-sequence.o
+                0x00005ae6                mac_sequence_register_seqno
  .any.text.mac_call_sent_callback
-                0x00005c8e       0x14 build/z1/obj/mac.o
-                0x00005c8e                mac_call_sent_callback
+                0x00005b6c       0x14 build/z1/obj/mac.o
+                0x00005b6c                mac_call_sent_callback
  .any.text.memb_init
-                0x00005ca2       0x36 build/z1/obj/memb.o
-                0x00005ca2                memb_init
+                0x00005b80       0x36 build/z1/obj/memb.o
+                0x00005b80                memb_init
  .any.text.memb_alloc
-                0x00005cd8       0x3e build/z1/obj/memb.o
-                0x00005cd8                memb_alloc
+                0x00005bb6       0x3e build/z1/obj/memb.o
+                0x00005bb6                memb_alloc
  .any.text.memb_free
-                0x00005d16       0x32 build/z1/obj/memb.o
-                0x00005d16                memb_free
+                0x00005bf4       0x32 build/z1/obj/memb.o
+                0x00005bf4                memb_free
  .any.text.memb_inmemb
-                0x00005d48       0x2a build/z1/obj/memb.o
-                0x00005d48                memb_inmemb
+                0x00005c26       0x2a build/z1/obj/memb.o
+                0x00005c26                memb_inmemb
  .any.text.msp430_init_dco
-                0x00005d72       0x28 build/z1/obj/msp430.o
-                0x00005d72                msp430_init_dco
+                0x00005c50       0x28 build/z1/obj/msp430.o
+                0x00005c50                msp430_init_dco
  .any.text.splhigh_
-                0x00005d9a        0xa build/z1/obj/msp430.o
-                0x00005d9a                splhigh_
+                0x00005c78        0xa build/z1/obj/msp430.o
+                0x00005c78                splhigh_
  .any.text.msp430_sync_dco
-                0x00005da4       0x6e build/z1/obj/msp430.o
-                0x00005da4                msp430_sync_dco
+                0x00005c82       0x6e build/z1/obj/msp430.o
+                0x00005c82                msp430_sync_dco
  .any.text.msp430_cpu_init
-                0x00005e12       0x2e build/z1/obj/msp430.o
-                0x00005e12                msp430_cpu_init
+                0x00005cf0       0x2e build/z1/obj/msp430.o
+                0x00005cf0                msp430_cpu_init
  .any.text.netstack_init
-                0x00005e40        0xe build/z1/obj/netstack.o
-                0x00005e40                netstack_init
+                0x00005d1e        0xe build/z1/obj/netstack.o
+                0x00005d1e                netstack_init
  .any.text.node_id_z1_restore
-                0x00005e4e       0x4c build/z1/obj/node-id-z1.o
-                0x00005e4e                node_id_z1_restore
+                0x00005d2c       0x4c build/z1/obj/node-id-z1.o
+                0x00005d2c                node_id_z1_restore
  .any.text.node_id_init
-                0x00005e9a       0x14 build/z1/obj/node-id.o
-                0x00005e9a                node_id_init
+                0x00005d78       0x14 build/z1/obj/node-id.o
+                0x00005d78                node_id_init
  .any.text.init
-                0x00005eae        0x8 build/z1/obj/nullnet.o
+                0x00005d8c        0x8 build/z1/obj/nullnet.o
  .any.text.output
-                0x00005eb6       0x42 build/z1/obj/nullnet.o
+                0x00005d94       0x42 build/z1/obj/nullnet.o
  .any.text.input
-                0x00005ef8       0x34 build/z1/obj/nullnet.o
+                0x00005dd6       0x34 build/z1/obj/nullnet.o
  .any.text.nullnet_set_input_callback
-                0x00005f2c        0x6 build/z1/obj/nullnet.o
-                0x00005f2c                nullnet_set_input_callback
+                0x00005e0a        0x6 build/z1/obj/nullnet.o
+                0x00005e0a                nullnet_set_input_callback
  .any.text.init
-                0x00005f32        0x2 build/z1/obj/nullrouting.o
+                0x00005e10        0x2 build/z1/obj/nullrouting.o
  .any.text.root_set_prefix
-                0x00005f34        0x2 build/z1/obj/nullrouting.o
+                0x00005e12        0x2 build/z1/obj/nullrouting.o
  .any.text.root_start
-                0x00005f36        0x4 build/z1/obj/nullrouting.o
+                0x00005e14        0x4 build/z1/obj/nullrouting.o
  .any.text.node_is_root
-                0x00005f3a        0x4 build/z1/obj/nullrouting.o
+                0x00005e18        0x4 build/z1/obj/nullrouting.o
  .any.text.get_root_ipaddr
-                0x00005f3e        0x4 build/z1/obj/nullrouting.o
+                0x00005e1c        0x4 build/z1/obj/nullrouting.o
  .any.text.get_sr_node_ipaddr
-                0x00005f42        0x4 build/z1/obj/nullrouting.o
+                0x00005e20        0x4 build/z1/obj/nullrouting.o
  .any.text.leave_network
-                0x00005f46        0x2 build/z1/obj/nullrouting.o
+                0x00005e24        0x2 build/z1/obj/nullrouting.o
  .any.text.node_has_joined
-                0x00005f48        0x4 build/z1/obj/nullrouting.o
+                0x00005e26        0x4 build/z1/obj/nullrouting.o
  .any.text.node_is_reachable
-                0x00005f4c        0x4 build/z1/obj/nullrouting.o
+                0x00005e2a        0x4 build/z1/obj/nullrouting.o
  .any.text.global_repair
-                0x00005f50        0x2 build/z1/obj/nullrouting.o
+                0x00005e2e        0x2 build/z1/obj/nullrouting.o
  .any.text.local_repair
-                0x00005f52        0x2 build/z1/obj/nullrouting.o
+                0x00005e30        0x2 build/z1/obj/nullrouting.o
  .any.text.ext_header_remove
-                0x00005f54        0x4 build/z1/obj/nullrouting.o
+                0x00005e32        0x4 build/z1/obj/nullrouting.o
  .any.text.ext_header_update
-                0x00005f58        0x4 build/z1/obj/nullrouting.o
+                0x00005e36        0x4 build/z1/obj/nullrouting.o
  .any.text.ext_header_hbh_update
-                0x00005f5c        0x4 build/z1/obj/nullrouting.o
+                0x00005e3a        0x4 build/z1/obj/nullrouting.o
  .any.text.ext_header_srh_update
-                0x00005f60        0x4 build/z1/obj/nullrouting.o
+                0x00005e3e        0x4 build/z1/obj/nullrouting.o
  .any.text.ext_header_srh_get_next_hop
-                0x00005f64        0x4 build/z1/obj/nullrouting.o
+                0x00005e42        0x4 build/z1/obj/nullrouting.o
  .any.text.link_callback
-                0x00005f68        0x2 build/z1/obj/nullrouting.o
+                0x00005e46        0x2 build/z1/obj/nullrouting.o
  .any.text.neighbor_state_changed
-                0x00005f6a        0x2 build/z1/obj/nullrouting.o
+                0x00005e48        0x2 build/z1/obj/nullrouting.o
  .any.text.drop_route
-                0x00005f6c        0x2 build/z1/obj/nullrouting.o
+                0x00005e4a        0x2 build/z1/obj/nullrouting.o
  .any.text.is_in_leaf_mode
-                0x00005f6e        0x4 build/z1/obj/nullrouting.o
+                0x00005e4c        0x4 build/z1/obj/nullrouting.o
  .any.text.packetbuf_hdrreduce
-                0x00005f72       0x1a build/z1/obj/packetbuf.o
-                0x00005f72                packetbuf_hdrreduce
+                0x00005e50       0x1a build/z1/obj/packetbuf.o
+                0x00005e50                packetbuf_hdrreduce
  .any.text.packetbuf_set_datalen
-                0x00005f8c        0x6 build/z1/obj/packetbuf.o
-                0x00005f8c                packetbuf_set_datalen
+                0x00005e6a        0x6 build/z1/obj/packetbuf.o
+                0x00005e6a                packetbuf_set_datalen
  .any.text.packetbuf_hdrptr
-                0x00005f92        0x6 build/z1/obj/packetbuf.o
-                0x00005f92                packetbuf_hdrptr
+                0x00005e70        0x6 build/z1/obj/packetbuf.o
+                0x00005e70                packetbuf_hdrptr
  .any.text.packetbuf_datalen
-                0x00005f98        0x6 build/z1/obj/packetbuf.o
-                0x00005f98                packetbuf_datalen
+                0x00005e76        0x6 build/z1/obj/packetbuf.o
+                0x00005e76                packetbuf_datalen
  .any.text.packetbuf_hdrlen
-                0x00005f9e        0xa build/z1/obj/packetbuf.o
-                0x00005f9e                packetbuf_hdrlen
+                0x00005e7c        0xa build/z1/obj/packetbuf.o
+                0x00005e7c                packetbuf_hdrlen
  .any.text.packetbuf_dataptr
-                0x00005fa8        0xc build/z1/obj/packetbuf.o
-                0x00005fa8                packetbuf_dataptr
+                0x00005e86        0xc build/z1/obj/packetbuf.o
+                0x00005e86                packetbuf_dataptr
  .any.text.packetbuf_copyto
-                0x00005fb4       0x3a build/z1/obj/packetbuf.o
-                0x00005fb4                packetbuf_copyto
+                0x00005e92       0x3a build/z1/obj/packetbuf.o
+                0x00005e92                packetbuf_copyto
  .any.text.packetbuf_totlen
-                0x00005fee        0xc build/z1/obj/packetbuf.o
-                0x00005fee                packetbuf_totlen
+                0x00005ecc        0xc build/z1/obj/packetbuf.o
+                0x00005ecc                packetbuf_totlen
  .any.text.packetbuf_hdralloc
-                0x00005ffa       0x3c build/z1/obj/packetbuf.o
-                0x00005ffa                packetbuf_hdralloc
+                0x00005ed8       0x3c build/z1/obj/packetbuf.o
+                0x00005ed8                packetbuf_hdralloc
  .any.text.packetbuf_attr_clear
-                0x00006036       0x28 build/z1/obj/packetbuf.o
-                0x00006036                packetbuf_attr_clear
+                0x00005f14       0x28 build/z1/obj/packetbuf.o
+                0x00005f14                packetbuf_attr_clear
  .any.text.packetbuf_clear
-                0x0000605e       0x12 build/z1/obj/packetbuf.o
-                0x0000605e                packetbuf_clear
+                0x00005f3c       0x12 build/z1/obj/packetbuf.o
+                0x00005f3c                packetbuf_clear
  .any.text.packetbuf_copyfrom
-                0x00006070       0x2a build/z1/obj/packetbuf.o
-                0x00006070                packetbuf_copyfrom
+                0x00005f4e       0x2a build/z1/obj/packetbuf.o
+                0x00005f4e                packetbuf_copyfrom
  .any.text.packetbuf_attr_copyto
-                0x0000609a       0x22 build/z1/obj/packetbuf.o
-                0x0000609a                packetbuf_attr_copyto
+                0x00005f78       0x22 build/z1/obj/packetbuf.o
+                0x00005f78                packetbuf_attr_copyto
  .any.text.packetbuf_attr_copyfrom
-                0x000060bc       0x24 build/z1/obj/packetbuf.o
-                0x000060bc                packetbuf_attr_copyfrom
+                0x00005f9a       0x24 build/z1/obj/packetbuf.o
+                0x00005f9a                packetbuf_attr_copyfrom
  .any.text.packetbuf_set_attr
-                0x000060e0        0xc build/z1/obj/packetbuf.o
-                0x000060e0                packetbuf_set_attr
+                0x00005fbe        0xc build/z1/obj/packetbuf.o
+                0x00005fbe                packetbuf_set_attr
  .any.text.packetbuf_attr
-                0x000060ec        0xa build/z1/obj/packetbuf.o
-                0x000060ec                packetbuf_attr
+                0x00005fca        0xa build/z1/obj/packetbuf.o
+                0x00005fca                packetbuf_attr
  .any.text.packetbuf_set_addr
-                0x000060f6       0x14 build/z1/obj/packetbuf.o
-                0x000060f6                packetbuf_set_addr
+                0x00005fd4       0x14 build/z1/obj/packetbuf.o
+                0x00005fd4                packetbuf_set_addr
  .any.text.packetbuf_addr
-                0x0000610a        0xe build/z1/obj/packetbuf.o
-                0x0000610a                packetbuf_addr
+                0x00005fe8        0xe build/z1/obj/packetbuf.o
+                0x00005fe8                packetbuf_addr
  .any.text.packetbuf_holds_broadcast
-                0x00006118        0xe build/z1/obj/packetbuf.o
-                0x00006118                packetbuf_holds_broadcast
+                0x00005ff6        0xe build/z1/obj/packetbuf.o
+                0x00005ff6                packetbuf_holds_broadcast
  .any.text.platform_init_stage_one
-                0x00006126       0x12 build/z1/obj/platform.o
-                0x00006126                platform_init_stage_one
+                0x00006004       0x12 build/z1/obj/platform.o
+                0x00006004                platform_init_stage_one
  .any.text.platform_init_stage_two
-                0x00006138       0xd6 build/z1/obj/platform.o
-                0x00006138                platform_init_stage_two
+                0x00006016       0xd6 build/z1/obj/platform.o
+                0x00006016                platform_init_stage_two
  .any.text.platform_init_stage_three
-                0x0000620e       0x72 build/z1/obj/platform.o
-                0x0000620e                platform_init_stage_three
+                0x000060ec       0x72 build/z1/obj/platform.o
+                0x000060ec                platform_init_stage_three
  .any.text.platform_idle
-                0x00006280       0x54 build/z1/obj/platform.o
-                0x00006280                platform_idle
+                0x0000615e       0x54 build/z1/obj/platform.o
+                0x0000615e                platform_idle
  .any.text.call_process
-                0x000062d4       0x40 build/z1/obj/process.o
+                0x000061b2       0x40 build/z1/obj/process.o
  .any.text.exit_process
-                0x00006314       0x88 build/z1/obj/process.o
+                0x000061f2       0x88 build/z1/obj/process.o
  .any.text.do_poll
-                0x0000639c       0x30 build/z1/obj/process.o
+                0x0000627a       0x30 build/z1/obj/process.o
  .any.text.process_alloc_event
-                0x000063cc        0xe build/z1/obj/process.o
-                0x000063cc                process_alloc_event
+                0x000062aa        0xe build/z1/obj/process.o
+                0x000062aa                process_alloc_event
  .any.text.process_init
-                0x000063da       0x1c build/z1/obj/process.o
-                0x000063da                process_init
+                0x000062b8       0x1c build/z1/obj/process.o
+                0x000062b8                process_init
  .any.text.process_run
-                0x000063f6       0x8c build/z1/obj/process.o
-                0x000063f6                process_run
+                0x000062d4       0x8c build/z1/obj/process.o
+                0x000062d4                process_run
  .any.text.process_nevents
-                0x00006482        0xe build/z1/obj/process.o
-                0x00006482                process_nevents
+                0x00006360        0xe build/z1/obj/process.o
+                0x00006360                process_nevents
  .any.text.process_post
-                0x00006490       0x4a build/z1/obj/process.o
-                0x00006490                process_post
+                0x0000636e       0x4a build/z1/obj/process.o
+                0x0000636e                process_post
  .any.text.process_post_synch
-                0x000064da       0x12 build/z1/obj/process.o
-                0x000064da                process_post_synch
+                0x000063b8       0x12 build/z1/obj/process.o
+                0x000063b8                process_post_synch
  .any.text.process_start
-                0x000064ec       0x36 build/z1/obj/process.o
-                0x000064ec                process_start
+                0x000063ca       0x36 build/z1/obj/process.o
+                0x000063ca                process_start
  .any.text.process_poll
-                0x00006522       0x18 build/z1/obj/process.o
-                0x00006522                process_poll
+                0x00006400       0x18 build/z1/obj/process.o
+                0x00006400                process_poll
  .any.text.queuebuf_init
-                0x0000653a       0x12 build/z1/obj/queuebuf.o
-                0x0000653a                queuebuf_init
+                0x00006418       0x12 build/z1/obj/queuebuf.o
+                0x00006418                queuebuf_init
  .any.text.queuebuf_new_from_packetbuf
-                0x0000654c       0x4e build/z1/obj/queuebuf.o
-                0x0000654c                queuebuf_new_from_packetbuf
+                0x0000642a       0x4e build/z1/obj/queuebuf.o
+                0x0000642a                queuebuf_new_from_packetbuf
  .any.text.queuebuf_update_attr_from_packetbuf
-                0x0000659a       0x12 build/z1/obj/queuebuf.o
-                0x0000659a                queuebuf_update_attr_from_packetbuf
+                0x00006478       0x12 build/z1/obj/queuebuf.o
+                0x00006478                queuebuf_update_attr_from_packetbuf
  .any.text.queuebuf_free
-                0x000065ac       0x2a build/z1/obj/queuebuf.o
-                0x000065ac                queuebuf_free
+                0x0000648a       0x2a build/z1/obj/queuebuf.o
+                0x0000648a                queuebuf_free
  .any.text.queuebuf_to_packetbuf
-                0x000065d6       0x32 build/z1/obj/queuebuf.o
-                0x000065d6                queuebuf_to_packetbuf
+                0x000064b4       0x32 build/z1/obj/queuebuf.o
+                0x000064b4                queuebuf_to_packetbuf
  .any.text.random_init
-                0x00006608        0x6 build/z1/obj/random.o
-                0x00006608                random_init
+                0x000064e6        0x6 build/z1/obj/random.o
+                0x000064e6                random_init
  .any.text.random_rand
-                0x0000660e        0x6 build/z1/obj/random.o
-                0x0000660e                random_rand
+                0x000064ec        0x6 build/z1/obj/random.o
+                0x000064ec                random_rand
  .any.text.rtimer_arch_init
-                0x00006614        0xe build/z1/obj/rtimer-arch.o
-                0x00006614                rtimer_arch_init
+                0x000064f2        0xe build/z1/obj/rtimer-arch.o
+                0x000064f2                rtimer_arch_init
  .any.text.rtimer_arch_now
-                0x00006622        0xe build/z1/obj/rtimer-arch.o
-                0x00006622                rtimer_arch_now
+                0x00006500        0xe build/z1/obj/rtimer-arch.o
+                0x00006500                rtimer_arch_now
  .any.text.rtimer_arch_schedule
-                0x00006630        0x6 build/z1/obj/rtimer-arch.o
-                0x00006630                rtimer_arch_schedule
+                0x0000650e        0x6 build/z1/obj/rtimer-arch.o
+                0x0000650e                rtimer_arch_schedule
  .any.text.rtimer_init
-                0x00006636        0x6 build/z1/obj/rtimer.o
-                0x00006636                rtimer_init
+                0x00006514        0x6 build/z1/obj/rtimer.o
+                0x00006514                rtimer_init
  .any.text.rtimer_run_next
-                0x0000663c       0x26 build/z1/obj/rtimer.o
-                0x0000663c                rtimer_run_next
+                0x0000651a       0x26 build/z1/obj/rtimer.o
+                0x0000651a                rtimer_run_next
  .any.text.process_thread_sensors_process
-                0x00006662       0xc2 build/z1/obj/sensors.o
+                0x00006540       0xc2 build/z1/obj/sensors.o
  .any.text.sensors_changed
-                0x00006724       0x2a build/z1/obj/sensors.o
-                0x00006724                sensors_changed
+                0x00006602       0x2a build/z1/obj/sensors.o
+                0x00006602                sensors_changed
  .any.text.spi_init
-                0x0000674e       0x32 build/z1/obj/spi-legacy.o
-                0x0000674e                spi_init
+                0x0000662c       0x32 build/z1/obj/spi-legacy.o
+                0x0000662c                spi_init
  .any.text.stack_check_init
-                0x00006780       0x2e build/z1/obj/stack-check.o
-                0x00006780                stack_check_init
+                0x0000665e       0x2e build/z1/obj/stack-check.o
+                0x0000665e                stack_check_init
  .any.text.stack_check_get_usage
-                0x000067ae       0x54 build/z1/obj/stack-check.o
-                0x000067ae                stack_check_get_usage
+                0x0000668c       0x54 build/z1/obj/stack-check.o
+                0x0000668c                stack_check_get_usage
  .any.text.process_thread_stack_check_process
-                0x00006802       0xd2 build/z1/obj/stack-check.o
+                0x000066e0       0xd2 build/z1/obj/stack-check.o
  .any.text.timer_set
-                0x000068d4       0x1c build/z1/obj/timer.o
-                0x000068d4                timer_set
+                0x000067b2       0x1c build/z1/obj/timer.o
+                0x000067b2                timer_set
  .any.text.timer_expired
-                0x000068f0       0x2a build/z1/obj/timer.o
-                0x000068f0                timer_expired
+                0x000067ce       0x2a build/z1/obj/timer.o
+                0x000067ce                timer_expired
  .any.text.timer_reset
-                0x0000691a       0x1c build/z1/obj/timer.o
-                0x0000691a                timer_reset
+                0x000067f8       0x1c build/z1/obj/timer.o
+                0x000067f8                timer_reset
  .any.text.status
-                0x00006936       0x12 build/z1/obj/tmp102.o
+                0x00006814       0x12 build/z1/obj/tmp102.o
  .any.text.tmp102_init
-                0x00006948       0x24 build/z1/obj/tmp102.o
-                0x00006948                tmp102_init
+                0x00006826       0x24 build/z1/obj/tmp102.o
+                0x00006826                tmp102_init
  .any.text.tmp102_stop
-                0x0000696c        0xa build/z1/obj/tmp102.o
-                0x0000696c                tmp102_stop
+                0x0000684a        0xa build/z1/obj/tmp102.o
+                0x0000684a                tmp102_stop
  .any.text.configure
-                0x00006976       0x26 build/z1/obj/tmp102.o
+                0x00006854       0x26 build/z1/obj/tmp102.o
  .any.text.tmp102_read_reg
-                0x0000699c       0x5e build/z1/obj/tmp102.o
-                0x0000699c                tmp102_read_reg
+                0x0000687a       0x5e build/z1/obj/tmp102.o
+                0x0000687a                tmp102_read_reg
  .any.text.tmp102_read_temp_x100
-                0x000069fa       0x58 build/z1/obj/tmp102.o
-                0x000069fa                tmp102_read_temp_x100
+                0x000068d8       0x58 build/z1/obj/tmp102.o
+                0x000068d8                tmp102_read_temp_x100
  .any.text.value
-                0x00006a52        0x6 build/z1/obj/tmp102.o
+                0x00006930        0x6 build/z1/obj/tmp102.o
  .any.text.putchar
-                0x00006a58       0x10 build/z1/obj/uart0-putchar.o
-                0x00006a58                putchar
+                0x00006936       0x10 build/z1/obj/uart0-putchar.o
+                0x00006936                putchar
  .any.text.uart0_active
-                0x00006a68        0xe build/z1/obj/uart0.o
-                0x00006a68                uart0_active
+                0x00006946        0xe build/z1/obj/uart0.o
+                0x00006946                uart0_active
  .any.text.uart0_writeb
-                0x00006a76       0x16 build/z1/obj/uart0.o
-                0x00006a76                uart0_writeb
+                0x00006954       0x16 build/z1/obj/uart0.o
+                0x00006954                uart0_writeb
  .any.text.uart0_init
-                0x00006a8c       0x4e build/z1/obj/uart0.o
-                0x00006a8c                uart0_init
+                0x0000696a       0x4e build/z1/obj/uart0.o
+                0x0000696a                uart0_init
  .any.text.watchdog_start
-                0x00006ada       0x14 build/z1/obj/watchdog.o
-                0x00006ada                watchdog_start
+                0x000069b8       0x14 build/z1/obj/watchdog.o
+                0x000069b8                watchdog_start
  .any.text.watchdog_periodic
-                0x00006aee       0x12 build/z1/obj/watchdog.o
-                0x00006aee                watchdog_periodic
+                0x000069cc       0x12 build/z1/obj/watchdog.o
+                0x000069cc                watchdog_periodic
  .any.text.watchdog_stop
-                0x00006b00       0x16 build/z1/obj/watchdog.o
-                0x00006b00                watchdog_stop
+                0x000069de       0x16 build/z1/obj/watchdog.o
+                0x000069de                watchdog_stop
  .any.text.watchdog_init
-                0x00006b16       0x12 build/z1/obj/watchdog.o
-                0x00006b16                watchdog_init
+                0x000069f4       0x12 build/z1/obj/watchdog.o
+                0x000069f4                watchdog_init
  .any.text.wait_ready
-                0x00006b28       0x46 build/z1/obj/xmem.o
+                0x00006a06       0x46 build/z1/obj/xmem.o
  .any.text.xmem_init
-                0x00006b6e       0x1e build/z1/obj/xmem.o
-                0x00006b6e                xmem_init
+                0x00006a4c       0x1e build/z1/obj/xmem.o
+                0x00006a4c                xmem_init
  .any.text.xmem_pread
-                0x00006b8c       0x88 build/z1/obj/xmem.o
-                0x00006b8c                xmem_pread
+                0x00006a6a       0x88 build/z1/obj/xmem.o
+                0x00006a6a                xmem_pread
  .any.text.printf
-                0x00006c14       0x10 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(printf.o)
-                0x00006c14                printf
+                0x00006af2       0x10 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(printf.o)
+                0x00006af2                printf
  .any.text.print_field
-                0x00006c24      0x176 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(vuprintf.o)
+                0x00006b02      0x176 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(vuprintf.o)
  .any.text.vuprintf
-                0x00006d9a      0x742 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(vuprintf.o)
-                0x00006d9a                vuprintf
+                0x00006c78      0x742 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(vuprintf.o)
+                0x00006c78                vuprintf
  .any.text.puts
-                0x000074dc       0x2c /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(puts.o)
-                0x000074dc                puts
+                0x000073ba       0x2c /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(puts.o)
+                0x000073ba                puts
  .any.text.rand
-                0x00007508       0x26 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(rand.o)
-                0x00007508                rand
+                0x000073e6       0x26 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(rand.o)
+                0x000073e6                rand
  .any.text.srand
-                0x0000752e        0xa /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(rand.o)
-                0x0000752e                srand
+                0x0000740c        0xa /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(rand.o)
+                0x0000740c                srand
  .any.text.memcmp
-                0x00007538       0x2c /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(memcmp.o)
-                0x00007538                memcmp
+                0x00007416       0x2c /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(memcmp.o)
+                0x00007416                memcmp
  .any.text.memcpy
-                0x00007564       0xe8 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(memcpy.o)
-                0x00007564                memcpy
+                0x00007442       0xe8 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(memcpy.o)
+                0x00007442                memcpy
  .any.text.memset
-                0x0000764c       0x5c /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(memset.o)
-                0x0000764c                memset
+                0x0000752a       0x5c /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(memset.o)
+                0x0000752a                memset
 
-.rodata         0x000076a8      0x4f0
-                0x000076a8                . = ALIGN (0x2)
+.rodata         0x00007588      0x468
+                0x00007588                . = ALIGN (0x2)
  *(SORT(.rodata) SORT(.rodata.*) SORT(.gnu.linkonce.r.*))
  .rodata.get_value
-                0x000076a8       0x64 build/z1/obj/cc2420.o
+                0x00007588       0x64 build/z1/obj/cc2420.o
  .rodata.set_value
-                0x0000770c       0x20 build/z1/obj/cc2420.o
+                0x000075ec       0x20 build/z1/obj/cc2420.o
  .rodata.adxl345
-                0x0000772c        0xe build/z1/obj/adxl345.o
-                0x0000772c                adxl345
+                0x0000760c        0xe build/z1/obj/adxl345.o
+                0x0000760c                adxl345
  .rodata.button_sensor
-                0x0000773a        0xe build/z1/obj/button-sensor.o
-                0x0000773a                button_sensor
+                0x0000761a        0xe build/z1/obj/button-sensor.o
+                0x0000761a                button_sensor
  .rodata.cc2420_driver
-                0x00007748       0x38 build/z1/obj/cc2420.o
-                0x00007748                cc2420_driver
+                0x00007628       0x38 build/z1/obj/cc2420.o
+                0x00007628                cc2420_driver
  .rodata.output_power
-                0x00007780       0x10 build/z1/obj/cc2420.o
+                0x00007660       0x10 build/z1/obj/cc2420.o
  .rodata.autostart_processes
-                0x00007790        0x4 build/z1/obj/coordinator.o
-                0x00007790                autostart_processes
+                0x00007670        0x4 build/z1/obj/coordinator.o
+                0x00007670                autostart_processes
  .rodata.csma_driver
-                0x00007794       0x1a build/z1/obj/csma.o
-                0x00007794                csma_driver
+                0x00007674       0x1a build/z1/obj/csma.o
+                0x00007674                csma_driver
  .rodata.framer_802154
-                0x000077ae        0xc build/z1/obj/framer-802154.o
-                0x000077ae                framer_802154
+                0x0000768e        0xc build/z1/obj/framer-802154.o
+                0x0000768e                framer_802154
  .rodata.linkaddr_null
-                0x000077ba        0x8 build/z1/obj/linkaddr.o
-                0x000077ba                linkaddr_null
+                0x0000769a        0x8 build/z1/obj/linkaddr.o
+                0x0000769a                linkaddr_null
  .rodata.nullnet_driver
-                0x000077c2        0xe build/z1/obj/nullnet.o
-                0x000077c2                nullnet_driver
+                0x000076a2        0xe build/z1/obj/nullnet.o
+                0x000076a2                nullnet_driver
  .rodata.nullrouting_driver
-                0x000077d0       0x52 build/z1/obj/nullrouting.o
-                0x000077d0                nullrouting_driver
+                0x000076b0       0x52 build/z1/obj/nullrouting.o
+                0x000076b0                nullrouting_driver
  .rodata.tmp102
-                0x00007822        0xe build/z1/obj/tmp102.o
-                0x00007822                tmp102
- .rodata        0x00007830       0x25 build/z1/obj/adxl345.o
- .rodata        0x00007855        0x7 build/z1/obj/button-sensor.o
- .rodata        0x0000785c        0xe build/z1/obj/cc2420.o
- .rodata        0x0000786a       0xd0 build/z1/obj/contiki-main.o
+                0x00007702        0xe build/z1/obj/tmp102.o
+                0x00007702                tmp102
+ .rodata        0x00007710       0x25 build/z1/obj/adxl345.o
+ .rodata        0x00007735        0x7 build/z1/obj/button-sensor.o
+ .rodata        0x0000773c        0xe build/z1/obj/cc2420.o
+ .rodata        0x0000774a       0xd0 build/z1/obj/contiki-main.o
  .rodata.input_callback
-                0x0000793a       0xe5 build/z1/obj/coordinator.o
+                0x0000781a       0x89 build/z1/obj/coordinator.o
  .rodata.set_wait_slot_time
-                0x00007a1f       0x38 build/z1/obj/coordinator.o
+                0x000078a3        0xc build/z1/obj/coordinator.o
  .rodata.process_thread_nullnet_example_process
-                0x00007a57       0x26 build/z1/obj/coordinator.o
- .rodata        0x00007a7d       0x1a build/z1/obj/coordinator.o
- .rodata        0x00007a97        0x5 build/z1/obj/csma.o
- .rodata        0x00007a9c        0xf build/z1/obj/ctimer.o
- .rodata        0x00007aab        0xc build/z1/obj/etimer.o
+                0x000078af       0x26 build/z1/obj/coordinator.o
+ .rodata        0x000078d5       0x1a build/z1/obj/coordinator.o
+ .rodata        0x000078ef        0x5 build/z1/obj/csma.o
+ .rodata        0x000078f4        0xf build/z1/obj/ctimer.o
+ .rodata        0x00007903        0xc build/z1/obj/etimer.o
  .rodata.CSWTCH.16
-                0x00007ab7        0x2 build/z1/obj/frame802154.o
+                0x0000790f        0x2 build/z1/obj/frame802154.o
  .rodata.log_lladdr
-                0x00007ab9       0x14 build/z1/obj/log.o
- .rodata        0x00007acd        0x8 build/z1/obj/nullnet.o
- .rodata        0x00007ad5        0xc build/z1/obj/nullrouting.o
+                0x00007911       0x14 build/z1/obj/log.o
+ .rodata        0x00007925        0x8 build/z1/obj/nullnet.o
+ .rodata        0x0000792d        0xc build/z1/obj/nullrouting.o
  .rodata.platform_init_stage_three
-                0x00007ae1       0x30 build/z1/obj/platform.o
- .rodata        0x00007b11        0x8 build/z1/obj/sensors.o
+                0x00007939       0x30 build/z1/obj/platform.o
+ .rodata        0x00007969        0x8 build/z1/obj/sensors.o
  .rodata.process_thread_stack_check_process
-                0x00007b19       0x5e build/z1/obj/stack-check.o
- .rodata        0x00007b77        0xc build/z1/obj/stack-check.o
- .rodata        0x00007b83        0xe build/z1/obj/tmp102.o
+                0x00007971       0x5e build/z1/obj/stack-check.o
+ .rodata        0x000079cf        0xc build/z1/obj/stack-check.o
+ .rodata        0x000079db        0xe build/z1/obj/tmp102.o
  .rodata.vuprintf
-                0x00007b91        0x7 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(vuprintf.o)
+                0x000079e9        0x7 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(vuprintf.o)
  *(SORT(.near.rodata) SORT(.near.rodata.*))
-                0x00007b98                . = ALIGN (0x2)
-                0x00007b98                _etext = .
+                0x000079f0                . = ALIGN (0x2)
+                0x000079f0                _etext = .
 
-.data           0x00001100       0xa6 load address 0x00007b98
+.data           0x00001100       0xa6 load address 0x000079f0
                 0x00001100                . = ALIGN (0x2)
                 0x00001100                __data_start = .
  *(SORT(.data) SORT(.data.*) SORT(.gnu.linkonce.d.*))
@@ -2745,10 +2745,10 @@ LOAD /usr/local/bin/../lib/gcc/msp430/4.7.2/mcpu-430x/mmpy-16/msr20/mc20/libcrt0
  *(SORT(.near.data) SORT(.near.data.*))
                 0x000011a6                . = ALIGN (0x2)
                 0x000011a6                _edata = .
-                0x00007b98                __data_load_start = LOADADDR (.data)
+                0x000079f0                __data_load_start = LOADADDR (.data)
                 0x000000a6                __data_size = SIZEOF (.data)
 
-.bss            0x000011a6      0x980 load address 0x00007c3e
+.bss            0x000011a6      0x980 load address 0x00007a96
                 0x000011a6                __bss_start = .
  *(SORT(.bss) SORT(.bss.*))
  .bss.int1_mask
@@ -2933,7 +2933,7 @@ LOAD /usr/local/bin/../lib/gcc/msp430/4.7.2/mcpu-430x/mmpy-16/msr20/mc20/libcrt0
                 0x00001b26                __bss_end = .
                 0x00000980                __bss_size = SIZEOF (.bss)
 
-.noinit         0x00001b26        0x2 load address 0x00007c3e
+.noinit         0x00001b26        0x2 load address 0x00007a96
                 0x00001b26                . = ALIGN (0x2)
                 0x00001b26                __noinit_start = .
  *(SORT(.noinit) SORT(.noinit.*))
@@ -3293,8 +3293,8 @@ LOAD /usr/local/bin/../lib/gcc/msp430/4.7.2/mcpu-430x/mmpy-16/msr20/mc20/libcrt0
  .debug_ranges  0x000000a0       0x10 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(memcpy.o)
  .debug_ranges  0x000000b0       0x10 /usr/local/bin/../lib/gcc/msp430/4.7.2/../../../../msp430/lib/mcpu-430x/mmpy-16/msr20/mc20/libc.a(memset.o)
                 0x00003100                PROVIDE (__stack, (ORIGIN (ram) + 0x2000))
-                0x00007b98                __data_start_rom = _etext
-                0x00007c3e                __data_end_rom = (_etext + SIZEOF (.data))
+                0x000079f0                __data_start_rom = _etext
+                0x00007a96                __data_end_rom = (_etext + SIZEOF (.data))
 OUTPUT(build/z1/coordinator.z1 elf32-msp430)
 
 .gnu.attributes

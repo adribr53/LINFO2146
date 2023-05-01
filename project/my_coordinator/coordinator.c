@@ -83,13 +83,15 @@ void set_wait_slot_time() {
   //PERIOD;
   clock_time_t start_clock = slot*CLOCK_SECOND; // replace by duration
   clock_time_t current_clock =  network_clock % PERIOD;
-  if (current_clock<PERIOD/2) {
+  /*if (current_clock<PERIOD/2) {
     LOG_INFO("cur clock in begin of period\n");
     wait_slot = (start_clock>current_clock) ? (start_clock-current_clock) : 0;
   } else {
     LOG_INFO("cur clock in end of period\n");
     wait_slot = start_clock + (PERIOD-current_clock);
-  }
+  }*/
+  wait_slot = start_clock + (PERIOD-current_clock);
+  LOG_INFO("wait : %lu\n", (long unsigned) wait_slot);
   
 }
 
@@ -106,7 +108,7 @@ void input_callback(const void *data, uint16_t len,
     switch (pkt.msg)
     {
     case DISCOVERY_TYPE:
-      LOG_INFO("Discovery");
+      //LOG_INFO("Discovery");
       switch (pkt.node) {
         case BORDER_NODE:
           LOG_INFO("From border");
@@ -116,11 +118,11 @@ void input_callback(const void *data, uint16_t len,
 
           if (!linkaddr_cmp(dest, &linkaddr_node_addr)) { // BC
             if (!has_parent) {
-              LOG_INFO("For the first time");                
+              //LOG_INFO("For the first time");                
               //has_parent = 1;                
               send_pkt(COORDINATOR_NODE, DISCOVERY_TYPE, 0, 0, &border);
             } else {            
-              LOG_INFO("Not the first time");
+            //  LOG_INFO("Not the first time");
               // todo send clock                
               if (network_clock>0) { // node has a say
                 prev_clock = cur_clock; // was set last when receiving a clock from border
@@ -153,19 +155,19 @@ void input_callback(const void *data, uint16_t len,
             children[next_index++] = *src;
           }        
         case COORDINATOR_NODE:
-          LOG_INFO("From Coordinator");      
+          //LOG_INFO("From Coordinator");      
         default:
           break;
         }
       break;
     case MESSAGE_TYPE:
-      LOG_INFO("Message");
+      //LOG_INFO("Message");
       count = count + pkt.payload; // should come from sensor that's 
       break;
     case SYNCHRO_TYPE:
       if (has_parent) {
         cur_clock = clock_time();
-        LOG_INFO("received his clock");
+        //LOG_INFO("received his clock");
         // todo : clock management
         // static struct etimer synchro_timer;      
         network_clock = pkt.clock;
