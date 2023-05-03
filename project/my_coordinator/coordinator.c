@@ -43,23 +43,34 @@ typedef struct packet {
   clock_time_t clock : 32;
 } packet_t;
 
-static unsigned count = 0;
+#define OWN_TYPE COORDINATOR_NODE
+
+// static unsigned count = 0;
 static linkaddr_t parent;
 static unsigned has_parent = 0;
 
 static clock_time_t network_clock = 0;
 static clock_time_t clock_at_bc = 0;
 static clock_time_t duration;
+static clock_time_t child_duration;
 static clock_time_t wait_slot;
-
+static clock_time_t must_respond_before;
 
 static packet_t my_pkt;
 static unsigned slot;
 
-static unsigned received_clock = 0;
+// static unsigned received_clock = 0;
 
-static linkaddr_t children[16]; // TODO resize if necessary
-static unsigned next_index = 0;
+#define MAX_CHILDREN 16
+static linkaddr_t children[MAX_CHILDREN]; // TODO resize if necessary
+
+
+static uint16_t total_count = 0;
+static uint8_t number_of_children = 0;
+static uint8_t child_has_respond = 0;
+static uint8_t current_child = 0;
+static uint8_t starting_child = 0;
+static uint8_t must_respond = 0;
 /*---------------------------------------------------------------------------*/
 PROCESS(nullnet_example_process, "NullNet broadcast example");
 AUTOSTART_PROCESSES(&nullnet_example_process);
@@ -90,6 +101,7 @@ void set_wait_slot_time() {
     wait_slot = start_clock + (PERIOD-current_clock);
   }*/
   wait_slot = start_clock + (PERIOD-current_clock);
+  must_respond_before = wait_slot + clock_time();
   LOG_INFO("wait : %lu\n", (long unsigned) wait_slot);
   
 }
@@ -136,6 +148,20 @@ void input_callback(const void *data, uint16_t len,
               has_parent = 1;
               slot = pkt.payload;
               duration = pkt.clock;
+              printf("Duration of the clock %lu \n", duration);
+              child_duration = pkt.clock / (number_of_children + 5);
+
+              set_wait_slot_time();
+              if (number_of_children > 0) {
+                child_has_respond = 0;
+                starting_child = current_child;
+                printf("Sending request to the first child\n");
+                send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, must_respond_before, &(children[current_child]));
+                LOG_INFO_LLADDR(&(children[current_child]));
+
+              }
+              must_respond = 1;
+              process_poll(&nullnet_example_process);
           }
           break;          
           
@@ -151,8 +177,10 @@ void input_callback(const void *data, uint16_t len,
             send_pkt(COORDINATOR_NODE, DISCOVERY_TYPE, 0, 0, &sensor);
           } else {
             // unicast
-            LOG_INFO("Received a unicast");
-            children[next_index++] = *src;
+            LOG_INFO("Received a unicast => ADD to children ");
+            children[number_of_children] = *src;
+            LOG_INFO_LLADDR(children + number_of_children);
+            number_of_children++;
           }        
         case COORDINATOR_NODE:
           //LOG_INFO("From Coordinator");      
@@ -161,19 +189,27 @@ void input_callback(const void *data, uint16_t len,
         }
       break;
     case MESSAGE_TYPE:
-      //LOG_INFO("Message");
-      count = count + pkt.payload; // should come from sensor that's 
+      // LOG_INFO("Message");
+      if ((number_of_children > 0) && linkaddr_cmp(&children[current_child], src)) {
+        //  right child respond
+        total_count += pkt.payload;
+        child_has_respond = 1;
+        printf("Received value %u from child %u\n", pkt.payload, current_child);
+      } // TODO: else => child still alive
+      printf("Received %u from child\n", pkt.payload);
+      // count = count + pkt.payload; // should come from sensor that's 
       break;
     case SYNCHRO_TYPE:
       if (has_parent) {
+        printf("Received synchro\n");
         clock_at_bc =  clock_time();
         //LOG_INFO("received his clock");
         // todo : clock management
         // static struct etimer synchro_timer;      
         network_clock = pkt.clock;        
         //set_wait();
-        received_clock = 1;      
-        process_poll(&nullnet_example_process);
+        // received_clock = 1;      
+        // process_poll(&nullnet_example_process);
       }
       break;
     default:
@@ -189,7 +225,7 @@ void input_callback(const void *data, uint16_t len,
 PROCESS_THREAD(nullnet_example_process, ev, data)
 {
   static struct etimer periodic_timer;    
-  static unsigned count = 0;  
+  // static unsigned count = 0;  
     
   
   PROCESS_BEGIN();
@@ -204,23 +240,59 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
   nullnet_set_input_callback(input_callback);
       
   send_pkt(UNDEFINED_NODE, DISCOVERY_TYPE, 0, 0, &linkaddr_node_addr);
-
+  printf("MY COORDINATOR IS HERE\n");
+  LOG_INFO("MY COORDINATOR IS HERE\n");
   while(1) {
-    if (!received_clock) {      
+    if (!must_respond) {      
       PROCESS_YIELD();
-    } else {      
-      set_wait_slot_time();
-      etimer_set(&periodic_timer, wait_slot);
-      PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
-      if (has_parent) {
-        LOG_INFO("After syn, sending data to the border");
-        LOG_INFO_("\n");      
-        send_pkt(COORDINATOR_NODE, MESSAGE_TYPE, count, 0, &parent);
-        count = 0;
+    } else {
+      if (number_of_children > 0) {
+        if (clock_time() < must_respond_before) {
+          printf("have the time => askip sensors\n");
+          if (child_has_respond) {
+            printf("Child has respond\n");
+            current_child = (current_child + 1) % number_of_children;
+            if (current_child != starting_child) {
+              printf("Ask the next child for his count\n");
+              send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_duration, &children[current_child]);
+              child_has_respond = 0;
+            } else {
+              printf("All child respond => wait for the slot to send to the border\n");
+              etimer_set(&periodic_timer, must_respond_before - clock_time());
+              PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
+              printf("Sending to border\n");
+              send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count, 0, &parent);
+              // received_clock = 0;
+              total_count = 0;
+              etimer_reset(&periodic_timer);
+            }
+          } else {printf("Child has not respond");}// child has not respond => wait TODO: failure detection
+        } else {
+          printf("not enough time => repond to border\n");
+          send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count, 0, &parent);
+          total_count = 0;
+          // received_clock = 0;
+        }
+        printf("Waiting %lu time\n", child_duration);
+        etimer_set(&periodic_timer, child_duration);
+        PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
+      } else {
+        printf("No child => just wait and send 0\n");
+        etimer_set(&periodic_timer, must_respond_before - clock_time());
+        PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
       }
+      // wait a period ?
+
+      // set_wait_slot_time();
+      // if (has_parent) {
+      //   LOG_INFO("After syn, sending data to the border");
+      //   LOG_INFO_("\n");      
+      //   send_pkt(COORDINATOR_NODE, MESSAGE_TYPE, count, 0, &parent);
+      //   count = 0;
+      // }
       /* RESET TIMER */
       etimer_reset(&periodic_timer);
-      received_clock = 0;
+      // received_clock = 0;
     }
   }
 

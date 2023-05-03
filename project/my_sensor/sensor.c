@@ -188,10 +188,13 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
               total_count = 0;
               must_respond = 1;
               must_repond_before = clock_time() + pkt.clock;
-              child_interval = pkt.clock / (number_of_children + 2);
+              child_interval = pkt.clock / (number_of_children + 5);
               // current_child = (current_child + 1) % number_of_children;
               starting_child = current_child;
               process_poll(&nullnet_example_process);
+              child_has_repond = 0;
+              printf("Ask to the first child\n");
+              send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_interval, &children[current_child]);
             }
           } else {
             if (must_respond && linkaddr_cmp(src, &children[current_child])) {
@@ -210,7 +213,7 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
           break;
       }
     } else {
-      // Broadcast
+      printf("Broadcast\n");
       if (pkt.msg == DISCOVERY_TYPE && pkt.node == SENSOR_NODE) {
         // Child node request for parent
         static linkaddr_t to_callback;
@@ -244,9 +247,10 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
       PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_for_parents));
       // TODO: Do parent process here
       if (parent_type != UNDEFINED_NODE) {
+        printf("Sending ok to the parent\n");
         send_pkt(OWN_TYPE, DISCOVERY_TYPE, 0, 0, &parent);
         parent_ok = 1;
-      }
+      } else {printf("No parent found :(\n)");}
       etimer_reset(&wait_for_parents);
     } else {
       if (must_respond) {
