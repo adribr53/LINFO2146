@@ -132,8 +132,10 @@ void input_callback(const void *data, uint16_t len,
         send_pkt(BORDER_NODE, DISCOVERY_TYPE, get_slot(), get_duration(), &coordinator);
         break;      
       case MESSAGE_TYPE:
-        LOG_INFO("A coordinator sent some data");
+        LOG_INFO("A damn coordinator sent some data %u\n", pkt.payload);
+        printf("Coordinator sent %u\n", pkt.payload);
         count += pkt.payload;
+        break;
       case SYNCHRO_TYPE:
         LOG_INFO("A coordinator sent some clock");
         register_clock(*src, pkt.clock);

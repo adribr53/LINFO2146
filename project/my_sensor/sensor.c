@@ -92,7 +92,7 @@ int is_parent(const linkaddr_t *addr) {
   return linkaddr_cmp(&parent, addr);
 }
 
-uint16_t get_sensor_count() {return rand();}
+uint16_t get_sensor_count() {return 1 + (rand() % 5);}
 
 static uint8_t must_respond = 0;
 
