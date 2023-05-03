@@ -25,6 +25,7 @@ AUTOSTART_PROCESSES(&nullnet_example_process);
 
 #define MAX_PAYLOAD_LENGTH (uint8_t) 42
 #define PERIOD (18 * CLOCK_SECOND)
+#define DURATION (1 * CLOCK_SECOND)
 
 typedef enum
 {
@@ -87,8 +88,25 @@ int is_unicast(const linkaddr_t *dest) {
   return linkaddr_cmp(dest, &linkaddr_node_addr);
 }
 
-static linkaddr_t children[16]; // TODO resize if necessary
-static unsigned next_child_index = 0;
+int is_parent(const linkaddr_t *addr) {
+  return linkaddr_cmp(&parent, addr);
+}
+
+uint16_t get_sensor_count() {return rand();}
+
+static uint8_t must_respond = 0;
+
+#define MAX_CHILDREN 16
+static linkaddr_t children[MAX_CHILDREN]; // TODO resize if necessary
+static uint16_t total_count = 0;
+static uint8_t number_of_children = 0;
+
+// Variable for 
+uint8_t child_has_repond = 0;
+uint8_t current_child = 0;
+uint8_t starting_child = 0;
+clock_time_t child_interval;
+clock_time_t must_repond_before;
 
 void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const linkaddr_t *dest) {
   if (!linkaddr_cmp(src, &linkaddr_node_addr) && len == sizeof(packet_t)) {
@@ -104,13 +122,13 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
           if (pkt.node == COORDINATOR_NODE) {
               // parent candidate
               if (parent_type != COORDINATOR_NODE) {
-                LOG_INFO("New parent : coordinator");
-                LOG_INFO_LLADDR(&parent);
-                LOG_INFO("\n");
                 // old parent : unkown or sensor
                 memcpy(&parent, src, sizeof(linkaddr_t));
                 parent_type = COORDINATOR_NODE;
                 parent_strength = get_strength();
+                LOG_INFO("New parent : coordinator => ");
+                LOG_INFO_LLADDR(&parent);
+                LOG_INFO("\n");
                 // TODO: parent_last_update = now()
               } else {
                   // compare strengt
@@ -128,8 +146,8 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
             if (parent_ok) {
               // child discovery
               printf("New child\n");
-              children[next_child_index] = *src;
-              next_child_index++;
+              children[number_of_children] = *src;
+              number_of_children++;
             } else {
               // parent candidate
               LOG_INFO("Discovery + sensor\n");
@@ -161,12 +179,30 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
           break;
         case MESSAGE_TYPE:
           LOG_INFO("Message\n");
-          if (parent_type != UNDEFINED_NODE) { // security check
-            LOG_INFO("Fowarding to ");
-            LOG_INFO_LLADDR(&parent);
-            LOG_INFO("\n");
-            memcpy(&to_send, &pkt, sizeof(packet_t));
-            NETSTACK_NETWORK.output(&parent);
+          if (is_parent(src)) {
+            if (number_of_children == 0) {
+              printf("No children => direct response\n");
+              send_pkt(OWN_TYPE, MESSAGE_TYPE, get_sensor_count(), 0, &parent);
+            } else {
+              printf("Have children => must take care of them, clock => %lu\n", pkt.clock);
+              total_count = 0;
+              must_respond = 1;
+              must_repond_before = clock_time() + pkt.clock;
+              child_interval = pkt.clock / (number_of_children + 2);
+              // current_child = (current_child + 1) % number_of_children;
+              starting_child = current_child;
+              process_poll(&nullnet_example_process);
+            }
+          } else {
+            if (must_respond && linkaddr_cmp(src, &children[current_child])) {
+              // if right child respond
+              total_count += pkt.payload;
+              child_has_repond = 1;
+            } else {
+              // TODO: maybe else => indicate the child is still alive
+                LOG_INFO_LLADDR(src);
+                printf("Sent a message\n");
+              }
           }
           break;
         default:
@@ -176,8 +212,7 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
     } else {
       // Broadcast
       if (pkt.msg == DISCOVERY_TYPE && pkt.node == SENSOR_NODE) {
-        // New child node
-
+        // Child node request for parent
         static linkaddr_t to_callback;
         memcpy(&to_callback, src, sizeof(linkaddr_t));
         send_pkt(OWN_TYPE, DISCOVERY_TYPE, 0, 0, &to_callback);
@@ -197,13 +232,14 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
   nullnet_set_input_callback(input_callback);
 
   printf("Starting process as Sensor\n");
-  
+
+  static struct etimer wait_for_parents;
+  static struct etimer wait_interval;
 
   while(1) {
     if (!parent_ok) {
       // No parent
       send_pkt(DISCOVERY_TYPE, OWN_TYPE, 0, 0, BROADCAST);
-      static struct etimer wait_for_parents;
       etimer_set(&wait_for_parents, 2*PERIOD);
       PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_for_parents));
       // TODO: Do parent process here
@@ -213,11 +249,40 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
       }
       etimer_reset(&wait_for_parents);
     } else {
-      static struct etimer interval;
-      etimer_set(&interval, PERIOD);
-      PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&interval));
-      // TODO: Send data and check parent
-      etimer_reset(&interval);
+      if (must_respond) {
+        if (clock_time() < (must_repond_before - (2 * child_interval))) {
+          // have the time
+          if (child_has_repond) {
+            current_child = (current_child + 1) % number_of_children;
+            if (current_child == starting_child) {
+              // get answer from all children => respond
+              send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count + get_sensor_count(), 0, &parent);
+              must_respond = 0;
+            } else {
+              // Ask the next child for his count
+              send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_interval, &children[current_child]);
+              child_has_repond = 0;
+              // wait an interval
+              etimer_set(&wait_interval, child_interval);
+              PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));
+              etimer_reset(&wait_interval);
+            }
+          } else {
+            // Child have not respond yet
+            // TODO: avoid dead child
+            // wait an interval
+            etimer_set(&wait_interval, child_interval);
+            PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));
+            etimer_reset(&wait_interval);
+          }
+        } else {
+          // Send to parent before it's too late
+          send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count + get_sensor_count(), 0, &parent);
+          must_respond = 0;
+        }
+      } else {
+        PROCESS_YIELD();
+      }
     }
 
   }
