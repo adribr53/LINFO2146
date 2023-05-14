@@ -42,11 +42,15 @@ typedef struct packet {
   unsigned payload : 12;
   clock_time_t clock : 32;
 } packet_t;
+unsigned DEAD = 42;
+#define BROADCAST NULL
 
 #define OWN_TYPE COORDINATOR_NODE
 
 // static unsigned count = 0;
 static linkaddr_t parent;
+static clock_time_t parent_last_update;
+
 static unsigned has_parent = 0;
 
 static clock_time_t network_clock = 0;
@@ -55,7 +59,6 @@ static clock_time_t duration;
 static clock_time_t child_duration;
 static clock_time_t wait_slot;
 static clock_time_t must_respond_before;
-
 static packet_t my_pkt;
 static unsigned slot;
 
@@ -72,8 +75,8 @@ static uint8_t current_child = 0;
 static uint8_t starting_child = 0;
 /*---------------------------------------------------------------------------*/
 PROCESS(nullnet_example_process, "NullNet broadcast example");
-AUTOSTART_PROCESSES(&nullnet_example_process);
-
+PROCESS(check_parent_process, "Coord check parent");
+AUTOSTART_PROCESSES(&nullnet_example_process, &check_parent_process);
 
 void send_pkt(node_type node, packet_type type, unsigned payload, clock_time_t clock_v, linkaddr_t *dest) {
   my_pkt.node = node;
@@ -83,6 +86,19 @@ void send_pkt(node_type node, packet_type type, unsigned payload, clock_time_t c
   memcpy(nullnet_buf, &my_pkt, sizeof(my_pkt));
   nullnet_len = sizeof(my_pkt);        
   NETSTACK_NETWORK.output(dest); 
+}
+
+void dead_parent() {
+  printf("Parent DEAD, RIP\n");
+  memset(&parent, 0, sizeof(parent));
+  has_parent = 0;
+  number_of_children = 0;
+  total_count = 0;
+  received_clock = 0;
+  // Broadcast the death
+  send_pkt(OWN_TYPE, SYNCHRO_TYPE, DEAD, 0, BROADCAST);
+  // Activate main thread
+  process_poll(&nullnet_example_process);
 }
 
 void set_wait_slot_time() {  
@@ -104,10 +120,13 @@ void set_wait_slot_time() {
   
 }
 
+int is_parent(const linkaddr_t *addr) {
+  return linkaddr_cmp(&parent, addr);
+}
+
 /*---------------------------------------------------------------------------*/
-void input_callback(const void *data, uint16_t len,
-  const linkaddr_t *src, const linkaddr_t *dest)
-{
+void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const linkaddr_t *dest) {
+  if (is_parent(src)) parent_last_update = clock_time();
   if(len == sizeof(packet_t)) {    
     static packet_t pkt;
     memcpy(&pkt, data, sizeof(packet_t));
@@ -144,28 +163,32 @@ void input_callback(const void *data, uint16_t len,
               LOG_INFO("received a slot : %u", pkt.payload); // duration : in timestamp, slot number : in payload                              
               memcpy(&parent, src, sizeof(linkaddr_t));
               has_parent = 1;
+              parent_last_update = clock_time();
               slot = pkt.payload;
               duration = pkt.clock;
+              process_poll(&check_parent_process);
           }
           break;          
           
                  
         case SENSOR_NODE:
           LOG_INFO("From sensor\n");
-          if(!linkaddr_cmp(dest, &linkaddr_node_addr)) {
-            // broadcast
-            LOG_INFO("Received a BC");  
-            static linkaddr_t sensor;
-            sensor.u8[0] = src->u8[0];
-            sensor.u8[1] = src->u8[1];   
-            send_pkt(COORDINATOR_NODE, DISCOVERY_TYPE, 0, 0, &sensor);
-          } else {
-            // unicast
-            LOG_INFO("Received a unicast => ADD to children ");
-            children[number_of_children] = *src;
-            LOG_INFO_LLADDR(children + number_of_children);
-            number_of_children++;
-          }        
+          if (has_parent) {
+            if(!linkaddr_cmp(dest, &linkaddr_node_addr)) {
+              // broadcast
+              LOG_INFO("Received a BC");  
+              static linkaddr_t sensor;
+              sensor.u8[0] = src->u8[0];
+              sensor.u8[1] = src->u8[1];   
+              send_pkt(COORDINATOR_NODE, DISCOVERY_TYPE, 0, 0, &sensor);
+            } else {
+              // unicast
+              LOG_INFO("Received a unicast => ADD to children ");
+              children[number_of_children] = *src;
+              LOG_INFO_LLADDR(children + number_of_children);
+              number_of_children++;
+            }        
+          }
         case COORDINATOR_NODE:
           //LOG_INFO("From Coordinator");      
         default:
@@ -293,6 +316,25 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
     }
   }
 
+  PROCESS_END();
+}
+
+
+PROCESS_THREAD(check_parent_process, ev, data) {
+  PROCESS_BEGIN();
+  static struct etimer wait_interval;
+
+  while (1) {
+    if (!has_parent) {
+      PROCESS_YIELD();
+    } else {
+      if (clock_time() > (parent_last_update + (5*PERIOD))) {
+        dead_parent();
+      }
+      etimer_set(&wait_interval, PERIOD);
+      PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));
+    }
+  }
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
