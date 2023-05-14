@@ -20,12 +20,14 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 /*---------------------------------------------------------------------------*/
 PROCESS(nullnet_example_process, "Sensor node");
-AUTOSTART_PROCESSES(&nullnet_example_process);
+PROCESS(check_for_parent, "Sensor node check parent");
+AUTOSTART_PROCESSES(&nullnet_example_process , &check_for_parent);
 /*---------------------------------------------------------------------------*/
 
 #define MAX_PAYLOAD_LENGTH (uint8_t) 42
 #define PERIOD (18 * CLOCK_SECOND)
 #define DURATION (1 * CLOCK_SECOND)
+unsigned DEAD = 42;
 
 typedef enum
 {
@@ -55,9 +57,10 @@ typedef struct packet
 static linkaddr_t parent;
 static node_type parent_type = UNDEFINED_NODE;
 static uint8_t parent_ok = 0;
+static clock_time_t parent_last_update;
+static uint8_t recovery_period = 0;
 // static linkaddr_t* child_nodes;
 radio_value_t  parent_strength;
-struct etimer parent_last_update;
 static packet_t to_send;
 
 // static unsigned received_clock = 0;
@@ -108,6 +111,22 @@ uint8_t starting_child = 0;
 clock_time_t child_interval;
 clock_time_t must_repond_before;
 
+void dead_parent() {
+  printf("Parent DEAD, RIP\n");
+  memset(&parent, 0, sizeof(parent));
+  parent_type = UNDEFINED_NODE;
+  parent_ok = 0;
+  number_of_children = 0;
+  total_count = 0;
+  must_respond = 0;
+  parent_strength = INT_MIN;
+  // Broadcast the death
+  send_pkt(OWN_TYPE, SYNCHRO_TYPE, DEAD, 0, BROADCAST);
+  // Activate main thread
+  recovery_period = 1;
+  process_poll(&nullnet_example_process);
+}
+
 void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const linkaddr_t *dest) {
   if (!linkaddr_cmp(src, &linkaddr_node_addr) && len == sizeof(packet_t)) {
     packet_t pkt;
@@ -115,6 +134,10 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
     LOG_INFO("Received from ");
     LOG_INFO_LLADDR(src);
     LOG_INFO_("\n");
+    if (is_parent(src)) {
+      // Update parent last update
+      parent_last_update = clock_time();
+    }
     if (is_unicast(dest)) {
       switch (pkt.msg) {
         case DISCOVERY_TYPE:
@@ -129,7 +152,6 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
                 LOG_INFO("New parent : coordinator => ");
                 LOG_INFO_LLADDR(&parent);
                 LOG_INFO("\n");
-                // TODO: parent_last_update = now()
               } else {
                   // compare strengt
                   radio_value_t new_strength = get_strength();
@@ -139,7 +161,6 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
                     LOG_INFO("\n");
                     memcpy(&parent, src, sizeof(linkaddr_t));
                     parent_strength = new_strength;
-                    // TODO: parent_last_update = now()
                   }
               }
           } else if (pkt.node == SENSOR_NODE) {
@@ -161,7 +182,6 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
                         LOG_INFO("New parent : sensor with higher signal strength :");
                         LOG_INFO_LLADDR(&parent);
                         LOG_INFO("\n");
-                        // TODO: parent_last_update = now()
                       }
                   } else {
                       // LOG_INFO("Discovery + sensor : new parent\n");
@@ -171,7 +191,6 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
                       LOG_INFO("\n");
                       parent_type = SENSOR_NODE;
                       parent_strength = get_strength();
-                      // TODO: parent_last_update = now()
                   }
               } // else discard
             }
@@ -214,12 +233,20 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
       }
     } else {
       printf("Broadcast\n");
-      if (pkt.msg == DISCOVERY_TYPE && pkt.node == SENSOR_NODE) {
+      if (pkt.msg == DISCOVERY_TYPE && pkt.node == SENSOR_NODE && parent_ok) {
         // Child node request for parent
         static linkaddr_t to_callback;
         memcpy(&to_callback, src, sizeof(linkaddr_t));
         send_pkt(OWN_TYPE, DISCOVERY_TYPE, 0, 0, &to_callback);
       }
+      if (pkt.msg == SYNCHRO_TYPE && is_parent(src) && pkt.payload == DEAD) {
+        printf("My parent is no longer active");
+        dead_parent();
+      }
+      if (pkt.msg == SYNCHRO_TYPE) printf("Synchro\n");
+      if (is_parent(src)) printf("My parent\n");
+      if (pkt.payload == DEAD) printf("DEAD\n");
+      else printf("Payload %d %d\n", pkt.payload, DEAD);
     }
   }
 }
@@ -228,7 +255,7 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
   //static struct etimer timer;
 
   PROCESS_BEGIN();
-  SENSORS_ACTIVATE(button_sensor);
+  // SENSORS_ACTIVATE(button_sensor);
   /* Initialize NullNet */
   nullnet_buf = (uint8_t *)&to_send;
   nullnet_len = sizeof(packet_t);
@@ -241,6 +268,14 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
 
   while(1) {
     if (!parent_ok) {
+      if (recovery_period) {
+        printf("Recovery period\n");
+        etimer_set(&wait_for_parents, 2*PERIOD);
+        PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_for_parents));
+        etimer_reset(&wait_for_parents);
+        recovery_period = 0;
+        printf("End of recovery, searching a new parent\n");
+      }
       // No parent
       send_pkt(DISCOVERY_TYPE, OWN_TYPE, 0, 0, BROADCAST);
       etimer_set(&wait_for_parents, 2*PERIOD);
@@ -250,6 +285,9 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
         printf("Sending ok to the parent\n");
         send_pkt(OWN_TYPE, DISCOVERY_TYPE, 0, 0, &parent);
         parent_ok = 1;
+        parent_last_update = clock_time();
+        // Starts check for parent failure
+        process_poll(&check_for_parent);
       } else {printf("No parent found :(\n)");}
       etimer_reset(&wait_for_parents);
     } else {
@@ -293,4 +331,24 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
 
   PROCESS_END();
 }
+
+PROCESS_THREAD(check_for_parent, ev, data) {
+  PROCESS_BEGIN();
+  static struct etimer wait_interval;
+
+  while (1) {
+    if (!parent_ok) {
+      PROCESS_YIELD();
+    } else {
+      // TODO: check
+      if (clock_time() > (parent_last_update + (5*PERIOD))) {
+        dead_parent();
+      }
+      etimer_set(&wait_interval, PERIOD);
+      PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));
+    }
+  }
+  PROCESS_END();
+}
 /*---------------------------------------------------------------------------*/
+ 
