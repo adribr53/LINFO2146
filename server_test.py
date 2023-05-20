@@ -16,11 +16,12 @@ def main(ip, port):
     sock.connect((ip, port))
 
     while True: 
-        sock.send(b"ihate")
+        sock.send(b"ln0=0")
         data = recv(sock)
-        print(data)
-        print(data.decode("utf-8"))
-        print("=====")
+        try:
+            print(int(data.decode("utf-8")))
+        except:
+            pass
         time.sleep(1)
 
 
