@@ -114,11 +114,11 @@ void dead_parent() {
 void dead_child() {
   printf("Child %d is DEAD, RIP\n", current_child);
   // Shift all elements from "current_child" to the left
-  for (int i = current_child; i < number_of_children-1; i++){
+  for (int i = current_child; i < number_of_children; i++){
     children[i]=children[i+1];
   }
-  // Shift the last element to the left
-  if (children[number_of_children-1] != 0x00) {children[number_of_children-1] = 0x00}
+  // Shift the last element to the left (DON'T WORK => linkaddr_t != int)
+  //if (children[number_of_children-1] != 0x00) {children[number_of_children-1] = 0x00}
   number_of_children--;
 }
 
