@@ -59,6 +59,7 @@ unsigned DEAD = 42;
 // static unsigned count = 0;
 static linkaddr_t parent;
 static clock_time_t parent_last_update;
+static clock_time_t children_last_update;
 
 static unsigned has_parent = 0;
 
@@ -110,6 +111,17 @@ void dead_parent() {
   process_poll(&nullnet_example_process);
 }
 
+void dead_child() {
+  printf("Child %d is DEAD, RIP\n", current_child);
+  // Shift all elements from "current_child" to the left
+  for (int i = current_child; i < number_of_children-1; i++){
+    children[i]=children[i+1];
+  }
+  // Shift the last element to the left
+  if (children[number_of_children-1] != 0x00) {children[number_of_children-1] = 0x00}
+  number_of_children--;
+}
+
 void set_wait_slot_time() {  
   wait_slot = SEND_INTERVAL;
   //slot;
@@ -133,18 +145,11 @@ int is_parent(const linkaddr_t *addr) {
   return linkaddr_cmp(&parent, addr);
 }
 
-void remove_child() {
-  // Shift all elements from "current_child" to the left
-  for (int i = current_child; i < number_of_children-1; i++){
-    children[i]=children[i+1];
-  }
-  // Shift the last element to the left
-  if (children[number_of_children-1] != 0x00) {children[number_of_children-1] = 0x00}
-}
-
 /*---------------------------------------------------------------------------*/
 void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const linkaddr_t *dest) {
-  if (is_parent(src)) parent_last_update = clock_time();
+  if (is_parent(src)) { parent_last_update = clock_time(); }
+  else { children_last_update = clock_time(); }
+
   if(len == sizeof(packet_t)) {    
     static packet_t pkt;
     memcpy(&pkt, data, sizeof(packet_t));
@@ -182,6 +187,7 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
               memcpy(&parent, src, sizeof(linkaddr_t));
               has_parent = 1;
               parent_last_update = clock_time();
+              children_last_update = clock_time(); // PAS SÛR DE ÇA
               slot = pkt.payload;
               //duration = pkt.clock;
               process_poll(&check_parent_process);
@@ -248,7 +254,8 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
   LOG_INFO_("\n");
   if (len == sizeof(slot_packet_t)) {
     memcpy(&parent, src, sizeof(linkaddr_t));    
-    parent_last_update = clock_time();                            
+    parent_last_update = clock_time();
+    children_last_update = clock_time();
     static slot_packet_t slot_pkt;
     memcpy(&slot_pkt, data, sizeof(slot_packet_t));
     clock_at_bc =  clock_time();
@@ -335,8 +342,6 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
                 }
               } else { // child has not respond => wait TODO: failure detection
                 printf("Child has not respond");
-                // Dead child => remove current child and shift
-                remove_child();
               }
             } else {
               printf("not enough time => repond to border\n");
@@ -377,6 +382,9 @@ PROCESS_THREAD(check_parent_process, ev, data) {
       LOG_INFO("CHECKING IF BORDER STILL THERE");
       if (clock_time() > (parent_last_update + (5*PERIOD))) {
         dead_parent();
+      }
+      if (clock_time() > (children_last_update + (5*PERIOD))) {
+        dead_child();
       }
       etimer_set(&wait_interval, PERIOD);
       PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));
