@@ -58,6 +58,7 @@ static slot_packet_t my_slot_pkt;
 
 static linkaddr_t children[5]; // TODO resize if necessary
 static clock_time_t children_clocks[5];
+static clock_time_t children_last_update[5];
 static unsigned next_index = 0;
 
 static clock_time_t network_clock = 0;
@@ -124,6 +125,36 @@ unsigned get_slot() {
   return next_index-1;
 }
 
+int get_child_id(const linkaddr_t *addr) {
+  for (int i = 0; i < next_index; i++) {
+    if (linkaddr_cmp(&children[i], addr)) return i;
+  }
+  return -1;
+}
+
+void dead_child(int child_id) {
+  printf("Child is DEAD, RIP\n");
+  // Shift all elements from "current_child" to the left
+  for (int i = child_id; i < next_index; i++){
+    children[i]=children[i+1];
+  }
+  // Shift the last element to the left (DON'T WORK => linkaddr_t != int)
+  //if (children[number_of_children-1] != 0x00) {children[number_of_children-1] = 0x00}
+  next_index--;
+}
+
+void check_dead_children() {
+  printf("Check if dead\n");
+  for (int i = 0; i < next_index; i++) {
+    if (clock_time() > (children_last_update[i] + (10*PERIOD))) {
+      dead_child(i);
+    }
+  }
+}
+
+
+
+
 /*---------------------------------------------------------------------------*/
 void input_callback(const void *data, uint16_t len,
   const linkaddr_t *src, const linkaddr_t *dest)
@@ -132,6 +163,12 @@ void input_callback(const void *data, uint16_t len,
     LOG_INFO("Received from ");
     LOG_INFO_LLADDR(src);
     LOG_INFO_("\n");
+
+    int id = get_child_id(src);
+    if (id >= 0) {
+      children_last_update[id] = clock_time();
+    }
+
     packet_t pkt;
     memcpy(&pkt, data, sizeof(pkt));
 
@@ -157,7 +194,7 @@ void input_callback(const void *data, uint16_t len,
         break;      
       case MESSAGE_TYPE:
         LOG_INFO("A damn coordinator sent some data %u\n", pkt.payload);
-        printf("Coordinator sent %u\n", pkt.payload);
+        //printf("Coordinator sent %u\n", pkt.payload);
         count += pkt.payload;
         LOG_INFO("cur count on border : %u\n", count);
         break;
@@ -221,11 +258,15 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
     /* 3) SEND DATA TO SERVER */
     printf("%u\n", count); 
     count = 0;
+
+    /* 4) DETECT FAILURES */
+    check_dead_children();
+
     /* RESET TIMER */
     etimer_reset(&periodic_timer);
 
     clock_time_t remaining_clock =  PERIOD - (network_clock % PERIOD);
-    LOG_INFO("REMAIN time %lu\n", remaining_clock);
+    LOG_INFO("REMAIN time %lu, #coord %u\n", remaining_clock, next_index);
     etimer_set(&periodic_timer, PERIOD-(CLOCK_SECOND/2) + remaining_clock); // wait an additional time to not go too fast
   }
 
