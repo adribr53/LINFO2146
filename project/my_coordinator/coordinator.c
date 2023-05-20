@@ -59,7 +59,6 @@ unsigned DEAD = 42;
 // static unsigned count = 0;
 static linkaddr_t parent;
 static clock_time_t parent_last_update;
-static clock_time_t children_last_update;
 
 static unsigned has_parent = 0;
 
@@ -76,6 +75,7 @@ static unsigned received_clock = 0;
 
 #define MAX_CHILDREN 16
 static linkaddr_t children[MAX_CHILDREN]; // TODO resize if necessary
+static clock_time_t children_last_update[MAX_CHILDREN];
 
 
 static uint8_t total_count = 0;
@@ -111,10 +111,12 @@ void dead_parent() {
   process_poll(&nullnet_example_process);
 }
 
-void dead_child() {
-  printf("Child %d is DEAD, RIP\n", current_child);
+void dead_child(int child_id) {
+  printf("Child is DEAD, RIP\n");
+  // Avoid error if dead child is the current child
+  if (child_id == current_child) child_has_respond = 1;
   // Shift all elements from "current_child" to the left
-  for (int i = current_child; i < number_of_children; i++){
+  for (int i = child_id; i < number_of_children; i++){
     children[i]=children[i+1];
   }
   // Shift the last element to the left (DON'T WORK => linkaddr_t != int)
@@ -145,10 +147,20 @@ int is_parent(const linkaddr_t *addr) {
   return linkaddr_cmp(&parent, addr);
 }
 
+int get_child_id(const linkaddr_t *addr) {
+  for (int i = 0; i < number_of_children; i++) {
+    if (linkaddr_cmp(&children[i], addr)) return i;
+  }
+  return -1;
+}
+
 /*---------------------------------------------------------------------------*/
 void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const linkaddr_t *dest) {
   if (is_parent(src)) { parent_last_update = clock_time(); }
-  else { children_last_update = clock_time(); }
+  int id = get_child_id(src);
+  if (id >= 0) {
+    children_last_update[id] = clock_time();
+  }
 
   if(len == sizeof(packet_t)) {    
     static packet_t pkt;
@@ -187,7 +199,6 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
               memcpy(&parent, src, sizeof(linkaddr_t));
               has_parent = 1;
               parent_last_update = clock_time();
-              children_last_update = clock_time(); // PAS SÛR DE ÇA
               slot = pkt.payload;
               //duration = pkt.clock;
               process_poll(&check_parent_process);
@@ -209,6 +220,7 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
               // unicast
               LOG_INFO("Received a unicast => ADD to children ");
               children[number_of_children] = *src;
+              children_last_update[number_of_children] = clock_time();
               LOG_INFO_LLADDR(children + number_of_children);
               number_of_children++;
             }        
@@ -255,7 +267,6 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
   if (len == sizeof(slot_packet_t)) {
     memcpy(&parent, src, sizeof(linkaddr_t));    
     parent_last_update = clock_time();
-    children_last_update = clock_time();
     static slot_packet_t slot_pkt;
     memcpy(&slot_pkt, data, sizeof(slot_packet_t));
     clock_at_bc =  clock_time();
@@ -383,8 +394,10 @@ PROCESS_THREAD(check_parent_process, ev, data) {
       if (clock_time() > (parent_last_update + (5*PERIOD))) {
         dead_parent();
       }
-      if (clock_time() > (children_last_update + (5*PERIOD))) {
-        dead_child();
+      for (int i = 0; i < number_of_children; i++) {
+        if (clock_time() > (children_last_update[i] + (5*PERIOD))) {
+          dead_child(i);
+        }
       }
       etimer_set(&wait_interval, PERIOD);
       PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));

@@ -58,7 +58,6 @@ static linkaddr_t parent;
 static node_type parent_type = UNDEFINED_NODE;
 static uint8_t parent_ok = 0;
 static clock_time_t parent_last_update;
-static clock_time_t children_last_update;
 static uint8_t recovery_period = 0;
 // static linkaddr_t* child_nodes;
 radio_value_t  parent_strength;
@@ -105,11 +104,12 @@ static uint8_t must_respond = 0;
 
 #define MAX_CHILDREN 16
 static linkaddr_t children[MAX_CHILDREN]; // TODO resize if necessary
+static clock_time_t children_last_update[MAX_CHILDREN];
 static uint8_t total_count = 0;
 static uint8_t number_of_children = 0;
 
 // Variable for 
-uint8_t child_has_repond = 0;
+uint8_t child_has_respond = 0;
 uint8_t current_child = 0;
 uint8_t starting_child = 0;
 clock_time_t child_interval;
@@ -131,15 +131,35 @@ void dead_parent() {
   process_poll(&nullnet_example_process);
 }
 
-void dead_child() {
-  printf("Child %d is DEAD, RIP\n", current_child);
+
+// ------------------------------------------------- //
+
+void check_dead_children() {
+  for (int i = 0; i < number_of_children; i++) {
+    if (clock_time() > (children_last_update[i] + (5*PERIOD))) {
+      dead_child(i);
+    }
+  }
+}
+
+void dead_child(int child_id) {
+  printf("Child is DEAD, RIP\n");
+  // Avoid error if dead child is the current child
+  if (child_id == current_child) child_has_respond = 1;
   // Shift all elements from "current_child" to the left
-  for (int i = current_child; i < number_of_children; i++){
+  for (int i = child_id; i < number_of_children; i++){
     children[i]=children[i+1];
   }
   // Shift the last element to the left (DON'T WORK => linkaddr_t != int)
   //if (children[number_of_children-1] != 0x00) {children[number_of_children-1] = 0x00}
   number_of_children--;
+}
+
+int get_child_id(const linkaddr_t *addr) {
+  for (int i = 0; i < number_of_children; i++) {
+    if (linkaddr_cmp(&children[i], addr)) return i;
+  }
+  return -1;
 }
 
 void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const linkaddr_t *dest) {
@@ -149,13 +169,16 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
     LOG_INFO("Received from ");
     LOG_INFO_LLADDR(src);
     LOG_INFO_("\n");
+
     if (is_parent(src)) {
       // Update parent last update
       parent_last_update = clock_time();
-    } else {
-      // Update children last update
-      children_last_update = clock_time();
     }
+    int id = get_child_id(src);
+    if (id >= 0) {
+      children_last_update[id] = clock_time();
+    }
+
     if (is_unicast(dest)) {
       switch (pkt.msg) {
         case DISCOVERY_TYPE:
@@ -231,7 +254,7 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
               // current_child = (current_child + 1) % number_of_children;
               starting_child = current_child;
               process_poll(&nullnet_example_process);
-              child_has_repond = 0;
+              child_has_respond = 0;
               //printf("Ask to the first child\n");
               send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_interval, &children[current_child]);
             }
@@ -239,7 +262,7 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
             if (must_respond && linkaddr_cmp(src, &children[current_child])) {
               // if right child respond
               total_count += pkt.payload;
-              child_has_repond = 1;
+              child_has_respond = 1;
             } else {
               // TODO: maybe else => indicate the child is still alive
                 LOG_INFO_LLADDR(src);
@@ -306,7 +329,6 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
         send_pkt(OWN_TYPE, DISCOVERY_TYPE, 0, 0, &parent);
         parent_ok = 1;
         parent_last_update = clock_time();
-        children_last_update = clock_time(); // PAS SÛR DE ÇA
         // Starts check for parent failure
         process_poll(&check_for_parent);
       } else {
@@ -317,16 +339,17 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
       if (must_respond) {
         if (clock_time() < (must_repond_before - (2 * child_interval))) {
           // have the time
-          if (child_has_repond) {
+          if (child_has_respond) {
             current_child = (current_child + 1) % number_of_children;
             if (current_child == starting_child) {
               // get answer from all children => respond
               send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count + get_sensor_count(), 0, &parent);
+              check_dead_children();
               must_respond = 0;
             } else {
               // Ask the next child for his count
               send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_interval, &children[current_child]);
-              child_has_repond = 0;
+              child_has_respond = 0;
               // wait an interval
               etimer_set(&wait_interval, child_interval);
               PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));
@@ -343,6 +366,7 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
         } else {
           // Send to parent before it's too late
           send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count + get_sensor_count(), 0, &parent);
+          check_dead_children();
           must_respond = 0;
         }
       } else {
@@ -366,9 +390,6 @@ PROCESS_THREAD(check_for_parent, ev, data) {
       // TODO: check
       if (clock_time() > (parent_last_update + (5*PERIOD))) {
         dead_parent();
-      }
-      if (clock_time() > (children_last_update + (5*PERIOD))) {
-        dead_child();
       }
       etimer_set(&wait_interval, PERIOD);
       PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));
