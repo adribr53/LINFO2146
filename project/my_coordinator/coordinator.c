@@ -134,10 +134,12 @@ int is_parent(const linkaddr_t *addr) {
 }
 
 void remove_child() {
-  for (int i = current_child; i < number_of_children; i++){        
+  // Shift all elements from "current_child" to the left
+  for (int i = current_child; i < number_of_children-1; i++){
     children[i]=children[i+1];
   }
-  if (children[number_of_children] != 0x00) {children[number_of_children] = 0x00}
+  // Shift the last element to the left
+  if (children[number_of_children-1] != 0x00) {children[number_of_children-1] = 0x00}
 }
 
 /*---------------------------------------------------------------------------*/
