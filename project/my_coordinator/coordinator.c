@@ -133,6 +133,13 @@ int is_parent(const linkaddr_t *addr) {
   return linkaddr_cmp(&parent, addr);
 }
 
+void remove_child() {
+  for (int i = current_child; i < number_of_children; i++){        
+    children[i]=children[i+1];
+  }
+  if (children[number_of_children] != 0x00) {children[number_of_children] = 0x00}
+}
+
 /*---------------------------------------------------------------------------*/
 void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const linkaddr_t *dest) {
   if (is_parent(src)) parent_last_update = clock_time();
@@ -324,7 +331,11 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
                   total_count = 0;
                   is_in_slot = 0;
                 }
-              } else {printf("Child has not respond");}// child has not respond => wait TODO: failure detection
+              } else { // child has not respond => wait TODO: failure detection
+                printf("Child has not respond");
+                // Dead child => remove current child and shift
+                remove_child();
+              }
             } else {
               printf("not enough time => repond to border\n");
               send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count, 0, &parent);

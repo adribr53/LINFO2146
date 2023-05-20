@@ -130,6 +130,13 @@ void dead_parent() {
   process_poll(&nullnet_example_process);
 }
 
+void remove_child() {
+  for (int i = current_child; i < number_of_children; i++){        
+    children[i]=children[i+1];
+  }
+  if (children[number_of_children] != 0x00) {children[number_of_children] = 0x00}
+}
+
 void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const linkaddr_t *dest) {
   if (!linkaddr_cmp(src, &linkaddr_node_addr) && len == sizeof(packet_t)) {
     packet_t pkt;
@@ -319,6 +326,7 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
           } else {
             // Child have not respond yet
             // TODO: avoid dead child
+            remove_child();
             // wait an interval
             etimer_set(&wait_interval, child_interval);
             PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));
