@@ -13,7 +13,7 @@
 
 /* Configuration */
 #define SEND_INTERVAL (8 * CLOCK_SECOND)
-#define PERIOD (18 * CLOCK_SECOND)
+#define PERIOD (5 * CLOCK_SECOND)
 
 #if MAC_CONF_WITH_TSCH
 #include "net/mac/tsch/tsch.h"
@@ -42,9 +42,19 @@ typedef struct packet {
   uint32_t clock : 32;
 } packet_t;
 
+typedef struct slot_packet {
+  node_type node : 2;
+  packet_type msg : 2;
+  unsigned payload : 12;
+  uint32_t duration : 32;
+  uint32_t clock : 32;
+} slot_packet_t;
+
 static uint8_t count = 0;
 
 static packet_t my_pkt;
+static slot_packet_t my_slot_pkt;
+
 
 static linkaddr_t children[5]; // TODO resize if necessary
 static clock_time_t children_clocks[5];
@@ -57,6 +67,8 @@ static clock_time_t clock_at_bc = 0;
 PROCESS(nullnet_example_process, "NullNet broadcast example");
 AUTOSTART_PROCESSES(&nullnet_example_process);
 
+static clock_time_t duration = CLOCK_SECOND;
+
 void send_pkt(node_type node, packet_type type, unsigned payload, clock_time_t clock_v, linkaddr_t *dest) {
   my_pkt.node = node;
   my_pkt.msg = type;
@@ -64,6 +76,17 @@ void send_pkt(node_type node, packet_type type, unsigned payload, clock_time_t c
   my_pkt.clock = clock_v;
   memcpy(nullnet_buf, &my_pkt, sizeof(my_pkt));
   nullnet_len = sizeof(my_pkt);        
+  NETSTACK_NETWORK.output(dest); 
+}
+
+void send_slot_pkt(node_type node, packet_type type, unsigned payload, clock_time_t duration_v, clock_time_t clock_v, linkaddr_t *dest) {
+  my_slot_pkt.node = node;
+  my_slot_pkt.msg = type;
+  my_slot_pkt.payload = payload;
+  my_slot_pkt.duration = duration_v;
+  my_slot_pkt.clock = clock_v;
+  memcpy(nullnet_buf, &my_slot_pkt, sizeof(my_slot_pkt));
+  nullnet_len = sizeof(my_slot_pkt);        
   NETSTACK_NETWORK.output(dest); 
 }
 
@@ -101,10 +124,6 @@ unsigned get_slot() {
   return next_index-1;
 }
 
-clock_time_t get_duration() {
-  return CLOCK_SECOND;
-}
-
 /*---------------------------------------------------------------------------*/
 void input_callback(const void *data, uint16_t len,
   const linkaddr_t *src, const linkaddr_t *dest)
@@ -123,18 +142,24 @@ void input_callback(const void *data, uint16_t len,
       {
       case DISCOVERY_TYPE:
         LOG_INFO("A coordinator wants to join");
+        if ((next_index+1)*duration>PERIOD-((3*CLOCK_SECOND)/2)) {
+          LOG_INFO("This is getting out of hand, now there are too many of them");
+          duration = duration / 2;
+          // 1) add change_dur, 2) postpone sending slot to next turn
+        }
         children[next_index++] = *src;
-        static linkaddr_t coordinator;
-        coordinator.u8[0] = src->u8[0];
-        coordinator.u8[1] = src->u8[1];
+        //static linkaddr_t coordinator;
+        //coordinator.u8[0] = src->u8[0];
+        //coordinator.u8[1] = src->u8[1];
         // todo : send slot
         // todo : adapt slot of other nodes (first, 1 second by slot)
-        send_pkt(BORDER_NODE, DISCOVERY_TYPE, get_slot(), get_duration(), &coordinator);
+        //send_pkt(BORDER_NODE, DISCOVERY_TYPE, get_slot(), duration, &coordinator);
         break;      
       case MESSAGE_TYPE:
         LOG_INFO("A damn coordinator sent some data %u\n", pkt.payload);
         printf("Coordinator sent %u\n", pkt.payload);
         count += pkt.payload;
+        LOG_INFO("cur count on border : %u\n", count);
         break;
       case SYNCHRO_TYPE:
         LOG_INFO("A coordinator sent some clock");
@@ -157,8 +182,6 @@ void input_callback(const void *data, uint16_t len,
 PROCESS_THREAD(nullnet_example_process, ev, data)
 {
   static struct etimer periodic_timer;  
-  static packet_t my_pkt;
-  static unsigned count = 0;  
   
   my_pkt.node = BORDER_NODE;
   my_pkt.msg = DISCOVERY_TYPE;
@@ -174,23 +197,25 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
   nullnet_len = sizeof(my_pkt);
   nullnet_set_input_callback(input_callback);
 
-  etimer_set(&periodic_timer, 16*CLOCK_SECOND);
+  etimer_set(&periodic_timer, PERIOD-(CLOCK_SECOND/2));
   while(1) {
     /* 1) SEND SIGNALING MSG "I AM THE BORDER" */
     
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer)); // take time into account
     LOG_INFO("Border signalling its existence \n");
     LOG_INFO_LLADDR(NULL);
-    send_pkt(BORDER_NODE, DISCOVERY_TYPE, 0, 0, NULL);       
+    send_pkt(BORDER_NODE, DISCOVERY_TYPE, 0, duration, NULL);       
     clock_at_bc = clock_time();
     etimer_reset(&periodic_timer);
 
     /* 2) wait for coordinator to respond, then compute the new clock*/
-    etimer_set(&periodic_timer, CLOCK_SECOND); 
+    etimer_set(&periodic_timer, (CLOCK_SECOND/3)); 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));        
     handle_synchro();    
-    send_pkt(BORDER_NODE, SYNCHRO_TYPE, 0, network_clock, NULL);        
-
+    //send_pkt(BORDER_NODE, SYNCHRO_TYPE, 0, network_clock, NULL);        
+    for (int i=0; i<next_index; i++) {
+      send_slot_pkt(BORDER_NODE, SYNCHRO_TYPE, i, duration, network_clock, &children[i]);
+    }
     LOG_INFO("Current time: %lu ticks\n", (unsigned long)network_clock);
 
     /* 3) SEND DATA TO SERVER */
@@ -201,7 +226,7 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
 
     clock_time_t remaining_clock =  PERIOD - (network_clock % PERIOD);
     LOG_INFO("REMAIN time %lu\n", remaining_clock);
-    etimer_set(&periodic_timer, 16*CLOCK_SECOND + remaining_clock); // wait an additional time to not go too fast
+    etimer_set(&periodic_timer, PERIOD-(CLOCK_SECOND/2) + remaining_clock); // wait an additional time to not go too fast
   }
 
   PROCESS_END();

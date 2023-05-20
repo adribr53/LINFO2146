@@ -14,7 +14,7 @@
 
 /* Configuration */
 #define SEND_INTERVAL (8 * CLOCK_SECOND)
-#define PERIOD (18 * CLOCK_SECOND)
+#define PERIOD (5 * CLOCK_SECOND)
 
 #if MAC_CONF_WITH_TSCH
 #include "net/mac/tsch/tsch.h"
@@ -42,6 +42,15 @@ typedef struct packet {
   unsigned payload : 12;
   clock_time_t clock : 32;
 } packet_t;
+
+typedef struct slot_packet {
+  node_type node : 2;
+  packet_type msg : 2;
+  unsigned payload : 12;
+  uint32_t duration : 32;
+  uint32_t clock : 32;
+} slot_packet_t;
+
 unsigned DEAD = 42;
 #define BROADCAST NULL
 
@@ -68,7 +77,7 @@ static unsigned received_clock = 0;
 static linkaddr_t children[MAX_CHILDREN]; // TODO resize if necessary
 
 
-static uint16_t total_count = 0;
+static uint8_t total_count = 0;
 static uint8_t number_of_children = 0;
 static uint8_t child_has_respond = 0;
 static uint8_t current_child = 0;
@@ -106,7 +115,7 @@ void set_wait_slot_time() {
   //slot;
   //network_clock;
   //PERIOD;
-  clock_time_t start_clock = slot*CLOCK_SECOND; // replace by duration
+  clock_time_t start_clock = slot*duration; // replace by duration
   clock_time_t current_clock =  network_clock % PERIOD;
   /*if (current_clock<PERIOD/2) {
     LOG_INFO("cur clock in begin of period\n");
@@ -143,7 +152,7 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
           static linkaddr_t border;
           border.u8[0] = src->u8[0];
           border.u8[1] = src->u8[1];
-
+          duration = pkt.clock;
           if (!linkaddr_cmp(dest, &linkaddr_node_addr)) { // BC
             if (!has_parent) {
               //LOG_INFO("For the first time");                
@@ -165,7 +174,7 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
               has_parent = 1;
               parent_last_update = clock_time();
               slot = pkt.payload;
-              duration = pkt.clock;
+              //duration = pkt.clock;
               process_poll(&check_parent_process);
           }
           break;          
@@ -226,8 +235,31 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
       LOG_INFO("Type not recognized");
     }
 
-  }
+  }  
   LOG_INFO_("\n");
+  if (len == sizeof(slot_packet_t)) {
+    memcpy(&parent, src, sizeof(linkaddr_t));    
+    parent_last_update = clock_time();                            
+    static slot_packet_t slot_pkt;
+    memcpy(&slot_pkt, data, sizeof(slot_packet_t));
+    clock_at_bc =  clock_time();
+    //LOG_INFO("received his clock");
+    // todo : clock management
+    // static struct etimer synchro_timer;      
+    network_clock = slot_pkt.clock;        
+    duration = slot_pkt.duration;
+    slot = slot_pkt.payload;
+    LOG_INFO("Received Slot : %u, Duration : %lu, Netclock %lu\n", slot, duration, network_clock);
+    received_clock = 1;
+    if (!has_parent) {
+      has_parent = 1;
+      process_poll(&nullnet_example_process);
+      process_poll(&check_parent_process);
+    } else {
+      process_poll(&nullnet_example_process);
+    }
+
+  }
 
 }
 /*---------------------------------------------------------------------------*/
@@ -275,7 +307,7 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
         // In the slot
         if (has_parent) {
           if (number_of_children > 0) {
-            if (clock_time() < (must_respond_before - (2*child_duration))) {
+            if (clock_time() < (must_respond_before - ((5*child_duration/4)))) {
               printf("have the time => askip sensors\n");
               if (child_has_respond) {
                 printf("Child has respond\n");
@@ -286,6 +318,7 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
                   child_has_respond = 0;
                 } else {
                   printf("All child respond => send data to border\n");
+                  LOG_INFO("total_count at send : %u\n",total_count);
                   send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count, 0, &parent);
                   received_clock = 0;
                   total_count = 0;
@@ -328,6 +361,7 @@ PROCESS_THREAD(check_parent_process, ev, data) {
     if (!has_parent) {
       PROCESS_YIELD();
     } else {
+      LOG_INFO("CHECKING IF BORDER STILL THERE");
       if (clock_time() > (parent_last_update + (5*PERIOD))) {
         dead_parent();
       }
