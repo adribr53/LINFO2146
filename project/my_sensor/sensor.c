@@ -97,7 +97,9 @@ int is_parent(const linkaddr_t *addr) {
 
 uint8_t get_sensor_count() {
   uint8_t mask = 0b00000011;
-  return rand() & mask;  
+  uint8_t r = rand() & mask;
+  if (parent_type == SENSOR_NODE) r = 3; // TODO REMOVE
+  return r;
 }
 
 static uint8_t must_respond = 0;
@@ -109,9 +111,9 @@ static uint8_t total_count = 0;
 static uint8_t number_of_children = 0;
 
 // Variable for 
-uint8_t child_has_respond = 0;
 uint8_t current_child = 0;
 uint8_t starting_child = 0;
+uint8_t received_values = 0;
 clock_time_t child_interval;
 clock_time_t must_repond_before;
 
@@ -122,6 +124,7 @@ void dead_parent() {
   parent_ok = 0;
   number_of_children = 0;
   total_count = 0;
+  received_values = 0;
   must_respond = 0;
   parent_strength = INT_MIN;
   // Broadcast the death
@@ -134,6 +137,19 @@ void dead_parent() {
 
 // ------------------------------------------------- //
 
+
+void dead_child(int child_id) {
+  LOG_INFO("Child ");
+  LOG_INFO_LLADDR(&children[child_id]);
+  LOG_INFO(" is DEAD, RIP\n");
+  // Shift all elements from "current_child" to the left
+  for (int i = child_id; i < number_of_children; i++){
+    children[i]=children[i+1];
+  }
+  number_of_children--;
+}
+
+
 void check_dead_children() {
   for (int i = 0; i < number_of_children; i++) {
     if (clock_time() > (children_last_update[i] + (5*PERIOD))) {
@@ -142,21 +158,8 @@ void check_dead_children() {
   }
 }
 
-void dead_child(int child_id) {
-  printf("Child is DEAD, RIP\n");
-  // Avoid error if dead child is the current child
-  if (child_id == current_child) child_has_respond = 1;
-  // Shift all elements from "current_child" to the left
-  for (int i = child_id; i < number_of_children; i++){
-    children[i]=children[i+1];
-  }
-  // Shift the last element to the left (DON'T WORK => linkaddr_t != int)
-  //if (children[number_of_children-1] != 0x00) {children[number_of_children-1] = 0x00}
-  number_of_children--;
-}
-
-int get_child_id(const linkaddr_t *addr) {
-  for (int i = 0; i < number_of_children; i++) {
+int8_t get_child_id(const linkaddr_t *addr) {
+  for (uint8_t i = 0; i < number_of_children; i++) {
     if (linkaddr_cmp(&children[i], addr)) return i;
   }
   return -1;
@@ -174,8 +177,9 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
       // Update parent last update
       parent_last_update = clock_time();
     }
-    int id = get_child_id(src);
+    int8_t id = get_child_id(src);
     if (id >= 0) {
+      printf("Update from child id %d\n", id);
       children_last_update[id] = clock_time();
     }
 
@@ -207,8 +211,9 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
           } else if (pkt.node == SENSOR_NODE) {
             if (parent_ok) {
               // child discovery
-              //printf("New child\n");
+              printf("New child\n");
               children[number_of_children] = *src;
+              children_last_update[number_of_children] = clock_time();
               number_of_children++;
             } else {
               // parent candidate
@@ -241,28 +246,29 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
           LOG_INFO("Message\n");
           if (is_parent(src)) {
             if (number_of_children == 0) {
-              //printf("No children => direct response\n");
+              printf("No children => direct response\n");
               uint8_t to_send = get_sensor_count();
               LOG_INFO("sensor count : %u\n",  to_send);
               send_pkt(OWN_TYPE, MESSAGE_TYPE, to_send, 0, &parent);
             } else {
               //printf("Have children => must take care of them, clock => %lu\n", pkt.clock);
               total_count = 0;
+              received_values = 0;
               must_respond = 1;
               must_repond_before = clock_time() + pkt.clock;
-              child_interval = pkt.clock / (number_of_children + 5);
+              child_interval = pkt.clock / (number_of_children + 1);
+              printf("Child interval %lu\n", child_interval);
               // current_child = (current_child + 1) % number_of_children;
               starting_child = current_child;
               process_poll(&nullnet_example_process);
-              child_has_respond = 0;
               //printf("Ask to the first child\n");
               send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_interval, &children[current_child]);
             }
           } else {
-            if (must_respond && linkaddr_cmp(src, &children[current_child])) {
+            if (must_respond && get_child_id(src) >= 0) {
               // if right child respond
               total_count += pkt.payload;
-              child_has_respond = 1;
+              received_values++;
             } else {
               // TODO: maybe else => indicate the child is still alive
                 LOG_INFO_LLADDR(src);
@@ -337,36 +343,31 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
       etimer_reset(&wait_for_parents);
     } else {
       if (must_respond) {
-        if (clock_time() < (must_repond_before - (2 * child_interval))) {
+        if (clock_time() < (must_repond_before - child_interval)) {
+          printf("HAVE THE TIME for drinking a beer\n");
           // have the time
-          if (child_has_respond) {
-            current_child = (current_child + 1) % number_of_children;
-            if (current_child == starting_child) {
-              // get answer from all children => respond
-              send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count + get_sensor_count(), 0, &parent);
-              check_dead_children();
-              must_respond = 0;
-            } else {
-              // Ask the next child for his count
-              send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_interval, &children[current_child]);
-              child_has_respond = 0;
-              // wait an interval
-              etimer_set(&wait_interval, child_interval);
-              PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));
-              etimer_reset(&wait_interval);
-            }
+          current_child = (current_child + 1) % number_of_children;
+          if (received_values == number_of_children) {
+            // get answer from all children => respond
+            printf("All children have respond (count: %d), time to get an ICE CREAM\n", total_count);
+            send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count + get_sensor_count(), 0, &parent);
+            must_respond = 0;
           } else {
-            // Child have not respond yet
-            // TODO: avoid dead child
-            // wait an interval
-            etimer_set(&wait_interval, child_interval);
-            PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));
-            etimer_reset(&wait_interval);
+            if (current_child != starting_child) {
+              // Ask the next child for his count
+              printf("Ask for next child %d\n", current_child);
+              send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_interval, &children[current_child]);
+            }
           }
+          // Wait for one subinterval
+          etimer_set(&wait_interval, child_interval);
+          PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));
+          etimer_reset(&wait_interval);
         } else {
+          uint8_t c_count = get_sensor_count() + total_count;
+          printf("sending %d to parent\n", c_count);
           // Send to parent before it's too late
-          send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count + get_sensor_count(), 0, &parent);
-          check_dead_children();
+          send_pkt(OWN_TYPE, MESSAGE_TYPE, c_count, 0, &parent);
           must_respond = 0;
         }
       } else {
@@ -388,9 +389,10 @@ PROCESS_THREAD(check_for_parent, ev, data) {
       PROCESS_YIELD();
     } else {
       // TODO: check
-      if (clock_time() > (parent_last_update + (5*PERIOD))) {
+      if (clock_time() > (parent_last_update + (10*PERIOD))) {
         dead_parent();
       }
+      check_dead_children();
       etimer_set(&wait_interval, PERIOD);
       PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));
     }

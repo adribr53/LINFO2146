@@ -77,10 +77,9 @@ static unsigned received_clock = 0;
 static linkaddr_t children[MAX_CHILDREN]; // TODO resize if necessary
 static clock_time_t children_last_update[MAX_CHILDREN];
 
-
 static uint8_t total_count = 0;
+static uint8_t received_values = 0;
 static uint8_t number_of_children = 0;
-static uint8_t child_has_respond = 0;
 static uint8_t current_child = 0;
 static uint8_t starting_child = 0;
 /*---------------------------------------------------------------------------*/
@@ -104,6 +103,7 @@ void dead_parent() {
   has_parent = 0;
   number_of_children = 0;
   total_count = 0;
+  received_values = 0;
   received_clock = 0;
   // Broadcast the death
   send_pkt(OWN_TYPE, SYNCHRO_TYPE, DEAD, 0, BROADCAST);
@@ -113,8 +113,6 @@ void dead_parent() {
 
 void dead_child(int child_id) {
   printf("Child is DEAD, RIP\n");
-  // Avoid error if dead child is the current child
-  if (child_id == current_child) child_has_respond = 1;
   // Shift all elements from "current_child" to the left
   for (int i = child_id; i < number_of_children; i++){
     children[i]=children[i+1];
@@ -122,6 +120,14 @@ void dead_child(int child_id) {
   // Shift the last element to the left (DON'T WORK => linkaddr_t != int)
   //if (children[number_of_children-1] != 0x00) {children[number_of_children-1] = 0x00}
   number_of_children--;
+}
+
+void check_dead_children() {
+  for (int i = 0; i < number_of_children; i++) {
+    if (clock_time() > (children_last_update[i] + (10*PERIOD))) {
+      dead_child(i);
+    }
+  }
 }
 
 void set_wait_slot_time() {  
@@ -233,13 +239,12 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
       break;
     case MESSAGE_TYPE:
       // LOG_INFO("Message");
-      if ((number_of_children > 0) && linkaddr_cmp(&children[current_child], src)) {
+      if ((number_of_children > 0) && get_child_id(src) >= 0) {
         //  right child respond
         total_count += pkt.payload;
-        child_has_respond = 1;
-        printf("Received value %u from child %u\n", pkt.payload, current_child);
+        received_values++;
+        printf("Received value %u from child\n", pkt.payload);
       } // TODO: else => child still alive
-      printf("Received %u from child\n", pkt.payload);
       // count = count + pkt.payload; // should come from sensor that's 
       break;
     case SYNCHRO_TYPE:
@@ -290,17 +295,11 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
 
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(nullnet_example_process, ev, data)
-{
+PROCESS_THREAD(nullnet_example_process, ev, data) {
   static struct etimer periodic_timer;    
-  static uint8_t is_in_slot = 0;  
-    
+  static uint8_t is_in_slot = 0; 
   
   PROCESS_BEGIN();
-
-#if MAC_CONF_WITH_TSCH
-  tsch_set_coordinator(linkaddr_cmp(&coordinator_addr, &linkaddr_node_addr));
-#endif /* MAC_CONF_WITH_TSCH */
 
   /* Initialize NullNet */
   nullnet_buf = (void *)&my_pkt;
@@ -320,13 +319,13 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
         etimer_set(&periodic_timer, wait_slot);
         PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
         // In the slot => prepare actions
+        printf("In the slot\n");
         is_in_slot = 1;
         must_respond_before = clock_time() + duration;
-        child_duration = duration / (number_of_children + 5);
+        child_duration = duration / (number_of_children + 1);
         if (number_of_children > 0) {
-            child_has_respond = 0;
             starting_child = current_child;
-            printf("Sending request to the first child\n");
+            printf("Sending request to the first child %d\n", starting_child);
             LOG_INFO_LLADDR(&(children[current_child]));
             send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_duration, &(children[current_child]));
         }
@@ -336,30 +335,31 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
           if (number_of_children > 0) {
             if (clock_time() < (must_respond_before - ((5*child_duration/4)))) {
               printf("have the time => askip sensors\n");
-              if (child_has_respond) {
-                printf("Child has respond\n");
-                current_child = (current_child + 1) % number_of_children;
+
+              current_child = (current_child + 1) % number_of_children;
+              printf("Current : %d starting : %d, number %d\n", current_child, starting_child, received_values);
+              if (received_values ==number_of_children) {
+                printf("All child respond => send data to border\n");
+                LOG_INFO("total_count at send : %u\n",total_count);
+                send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count, 0, &parent);
+                received_clock = 0;
+                total_count = 0;
+                is_in_slot = 0;
+                received_values = 0;
+              } else {
                 if (current_child != starting_child) {
                   printf("Ask the next child for his count\n");
                   send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_duration, &children[current_child]);
-                  child_has_respond = 0;
-                } else {
-                  printf("All child respond => send data to border\n");
-                  LOG_INFO("total_count at send : %u\n",total_count);
-                  send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count, 0, &parent);
-                  received_clock = 0;
-                  total_count = 0;
-                  is_in_slot = 0;
                 }
-              } else { // child has not respond => wait TODO: failure detection
-                printf("Child has not respond");
               }
+              
             } else {
               printf("not enough time => repond to border\n");
               send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count, 0, &parent);
               total_count = 0;
               is_in_slot = 0;
               received_clock = 0;
+              received_values = 0;
             }
             printf("Waiting %lu time\n", child_duration);
             etimer_set(&periodic_timer, child_duration);
@@ -394,11 +394,7 @@ PROCESS_THREAD(check_parent_process, ev, data) {
       if (clock_time() > (parent_last_update + (5*PERIOD))) {
         dead_parent();
       }
-      for (int i = 0; i < number_of_children; i++) {
-        if (clock_time() > (children_last_update[i] + (5*PERIOD))) {
-          dead_child(i);
-        }
-      }
+      check_dead_children();
       etimer_set(&wait_interval, PERIOD);
       PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_interval));
     }
