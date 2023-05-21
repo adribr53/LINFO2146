@@ -98,7 +98,6 @@ int is_parent(const linkaddr_t *addr) {
 uint8_t get_sensor_count() {
   uint8_t mask = 0b00000011;
   uint8_t r = rand() & mask;
-  if (parent_type == SENSOR_NODE) r = 3; // TODO REMOVE
   return r;
 }
 
@@ -118,7 +117,7 @@ clock_time_t child_interval;
 clock_time_t must_repond_before;
 
 void dead_parent() {
-  printf("Parent DEAD, RIP\n");
+  LOG_INFO("SENSOR - Parent is DEAD; RIP\n");
   memset(&parent, 0, sizeof(parent));
   parent_type = UNDEFINED_NODE;
   parent_ok = 0;
@@ -139,7 +138,7 @@ void dead_parent() {
 
 
 void dead_child(int child_id) {
-  LOG_INFO("Child ");
+  LOG_INFO("SENSOR - Child ");
   LOG_INFO_LLADDR(&children[child_id]);
   LOG_INFO(" is DEAD, RIP\n");
   // Shift all elements from "current_child" to the left
@@ -178,15 +177,13 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
       parent_last_update = clock_time();
     }
     int8_t id = get_child_id(src);
-    if (id >= 0) {
-      printf("Update from child id %d\n", id);
+    if (id >= 0) {      
       children_last_update[id] = clock_time();
     }
 
     if (is_unicast(dest)) {
       switch (pkt.msg) {
-        case DISCOVERY_TYPE:
-          LOG_INFO("Discovery\n");
+        case DISCOVERY_TYPE:          
           if (pkt.node == COORDINATOR_NODE) {
               // parent candidate
               if (parent_type != COORDINATOR_NODE) {
@@ -194,14 +191,14 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
                 memcpy(&parent, src, sizeof(linkaddr_t));
                 parent_type = COORDINATOR_NODE;
                 parent_strength = get_strength();
-                LOG_INFO("New parent : coordinator => ");
+                LOG_INFO("SENSOR - New parent : coordinator => ");
                 LOG_INFO_LLADDR(&parent);
                 LOG_INFO("\n");
               } else {
                   // compare strengt
                   radio_value_t new_strength = get_strength();
                   if (new_strength > parent_strength) {
-                    LOG_INFO("New parent : coordinator with higher signal strength :");
+                    LOG_INFO("SENSOR - New parent : coordinator with higher signal strength :");
                     LOG_INFO_LLADDR(&parent);
                     LOG_INFO("\n");
                     memcpy(&parent, src, sizeof(linkaddr_t));
@@ -211,13 +208,13 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
           } else if (pkt.node == SENSOR_NODE) {
             if (parent_ok) {
               // child discovery
-              printf("New child\n");
+              LOG_INFO("SENSOR - New child\n");
               children[number_of_children] = *src;
               children_last_update[number_of_children] = clock_time();
               number_of_children++;
             } else {
               // parent candidate
-              LOG_INFO("Discovery + sensor\n");
+              LOG_INFO("SENSOR - Discovery + sensor\n");
               if (parent_type != COORDINATOR_NODE) {
                   if (parent_type != UNDEFINED_NODE) {
                       // already have a parent
@@ -225,14 +222,14 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
                       if (new_strength > parent_strength) {
                         memcpy(&parent, src, sizeof(linkaddr_t));
                         parent_strength = new_strength;
-                        LOG_INFO("New parent : sensor with higher signal strength :");
+                        LOG_INFO("SENSOR - New parent : sensor with higher signal strength :");
                         LOG_INFO_LLADDR(&parent);
                         LOG_INFO("\n");
                       }
                   } else {
                       // LOG_INFO("Discovery + sensor : new parent\n");
                       memcpy(&parent, src, sizeof(linkaddr_t));
-                      LOG_INFO("New parent : sensor");
+                      LOG_INFO("SENSOR - New parent : sensor");
                       LOG_INFO_LLADDR(&parent);
                       LOG_INFO("\n");
                       parent_type = SENSOR_NODE;
@@ -243,25 +240,21 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
           }
           break;
         case MESSAGE_TYPE:
-          LOG_INFO("Message\n");
           if (is_parent(src)) {
-            if (number_of_children == 0) {
-              printf("No children => direct response\n");
+            if (number_of_children == 0) {              
               uint8_t to_send = get_sensor_count();
-              LOG_INFO("sensor count : %u\n",  to_send);
+              LOG_INFO("SENSOR - no child, count : %u\n",  to_send);
               send_pkt(OWN_TYPE, MESSAGE_TYPE, to_send, 0, &parent);
             } else {
-              //printf("Have children => must take care of them, clock => %lu\n", pkt.clock);
               total_count = 0;
               received_values = 0;
               must_respond = 1;
               must_repond_before = clock_time() + pkt.clock;
               child_interval = pkt.clock / (number_of_children + 1);
-              printf("Child interval %lu\n", child_interval);
+              LOG_INFO("SENSOR - Child interval %lu\n", child_interval);
               // current_child = (current_child + 1) % number_of_children;
               starting_child = current_child;
               process_poll(&nullnet_example_process);
-              //printf("Ask to the first child\n");
               send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_interval, &children[current_child]);
             }
           } else {
@@ -270,9 +263,7 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
               total_count += pkt.payload;
               received_values++;
             } else {
-              // TODO: maybe else => indicate the child is still alive
                 LOG_INFO_LLADDR(src);
-                //printf("Sent a message\n");
               }
           }
           break;
@@ -281,7 +272,6 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
           break;
       }
     } else {
-      //printf("Broadcast\n");
       if (pkt.msg == DISCOVERY_TYPE && pkt.node == SENSOR_NODE && parent_ok) {
         // Child node request for parent
         static linkaddr_t to_callback;
@@ -289,13 +279,8 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
         send_pkt(OWN_TYPE, DISCOVERY_TYPE, 0, 0, &to_callback);
       }
       if (pkt.msg == SYNCHRO_TYPE && is_parent(src) && pkt.payload == DEAD) {
-        //printf("My parent is no longer active");
         dead_parent();
       }
-      //if (pkt.msg == SYNCHRO_TYPE) printf("Synchro\n");
-      //if (is_parent(src)) printf("My parent\n");
-      //if (pkt.payload == DEAD) printf("DEAD\n");
-      //else printf("Payload %d %d\n", pkt.payload, DEAD);
     }
   }
 }
@@ -310,28 +295,24 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
   nullnet_len = sizeof(packet_t);
   nullnet_set_input_callback(input_callback);
 
-  printf("Starting process as Sensor\n");
-
   static struct etimer wait_for_parents;
   static struct etimer wait_interval;
 
   while(1) {
     if (!parent_ok) {
       if (recovery_period) {
-        printf("Recovery period\n");
+        LOG_INFO("SENSOR - Recovery period\n");
         etimer_set(&wait_for_parents, 2*PERIOD);
         PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_for_parents));
         etimer_reset(&wait_for_parents);
         recovery_period = 0;
-        printf("End of recovery, searching a new parent\n");
+        LOG_INFO("SENSOR - End of recovery, searching a new parent\n");
       }
       // No parent
       send_pkt(DISCOVERY_TYPE, OWN_TYPE, 0, 0, BROADCAST);
       etimer_set(&wait_for_parents, 2*PERIOD);
       PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&wait_for_parents));
-      // TODO: Do parent process here
       if (parent_type != UNDEFINED_NODE) {
-        //printf("Sending ok to the parent\n");
         send_pkt(OWN_TYPE, DISCOVERY_TYPE, 0, 0, &parent);
         parent_ok = 1;
         parent_last_update = clock_time();
@@ -344,18 +325,17 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
     } else {
       if (must_respond) {
         if (clock_time() < (must_repond_before - child_interval)) {
-          printf("HAVE THE TIME for drinking a beer\n");
           // have the time
           current_child = (current_child + 1) % number_of_children;
           if (received_values == number_of_children) {
             // get answer from all children => respond
-            printf("All children have respond (count: %d), time to get an ICE CREAM\n", total_count);
+            LOG_INFO("SENSOR - All children have respond (count: %d)\n", total_count);
             send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count + get_sensor_count(), 0, &parent);
             must_respond = 0;
           } else {
             if (current_child != starting_child) {
               // Ask the next child for his count
-              printf("Ask for next child %d\n", current_child);
+              LOG_INFO("SENSOR - Ask for next child %d\n", current_child);
               send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_interval, &children[current_child]);
             }
           }
@@ -365,7 +345,7 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
           etimer_reset(&wait_interval);
         } else {
           uint8_t c_count = get_sensor_count() + total_count;
-          printf("sending %d to parent\n", c_count);
+          LOG_INFO("SENSOR - sending %d to parent\n", c_count);
           // Send to parent before it's too late
           send_pkt(OWN_TYPE, MESSAGE_TYPE, c_count, 0, &parent);
           must_respond = 0;
