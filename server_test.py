@@ -21,7 +21,7 @@ def main(ip, port):
         try:
             print(int(data.decode("utf-8")))
         except:
-            pass
+            print("Non numerical log : ", data.decode("utf-8"))        
         time.sleep(1)
 
 

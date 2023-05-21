@@ -6,6 +6,6 @@ for filename in project/*; do
 done
 
 for filename in simu/*; do
-    rm -r $CNG_PATH/examples/$(basename $filename)
-    cp -r $filename $CNG_PATH/examples/
+    rm -r $CNG_PATH/$(basename $filename)
+    cp -r $filename $CNG_PATH/
 done

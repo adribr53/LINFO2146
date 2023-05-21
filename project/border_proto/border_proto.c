@@ -102,11 +102,8 @@ void register_clock(linkaddr_t child, clock_time_t clock_child) {
 void handle_synchro() {
   long signed avg_delta = 0;
   unsigned cnt_clocks = 1; // count the diff of border with itself
-  LOG_INFO("call to handle_synchro gives next_time %u\n", next_index);
   for (int i=0; i<next_index; i++) {
     if (children_clocks[i]>0) {
-      unsigned long top = (unsigned long)children_clocks[i];
-      LOG_INFO("children clock %lu %lu\n", top, PERIOD);
       avg_delta += children_clocks[i] - network_clock;      
       cnt_clocks++;
       children_clocks[i]=0; // reset
@@ -116,9 +113,8 @@ void handle_synchro() {
   clock_time_t clock_at_recomp = clock_time();
   
   avg_delta = avg_delta / cnt_clocks;
-  LOG_INFO("avg delta %ld, cnt clocks %u, cur_clock %lu, prev_clock %lu\n", avg_delta, cnt_clocks, clock_at_recomp, clock_at_bc);  
   network_clock = network_clock + avg_delta + (clock_at_recomp-clock_at_bc); 
-  LOG_INFO("NEW netclock :%lu\n", network_clock);
+  //LOG_INFO("BORDER - SYNCH - NEW NEW CLOCK :%lu\n", network_clock);
 }
 
 unsigned get_slot() {
@@ -133,7 +129,6 @@ int get_child_id(const linkaddr_t *addr) {
 }
 
 void dead_child(int child_id) {
-  printf("Child is DEAD, RIP\n");
   // Shift all elements from "current_child" to the left
   for (int i = child_id; i < next_index; i++){
     children[i]=children[i+1];
@@ -144,10 +139,10 @@ void dead_child(int child_id) {
 }
 
 void check_dead_children() {
-  printf("Check if dead\n");
   for (int i = 0; i < next_index; i++) {
     if (clock_time() > (children_last_update[i] + (10*PERIOD))) {
       dead_child(i);
+      //LOG_INFO("BORDER - DEAD OF CHILDREN %d\n", i);
     }
   }
 }
@@ -160,9 +155,9 @@ void input_callback(const void *data, uint16_t len,
   const linkaddr_t *src, const linkaddr_t *dest)
 {
   if(len == sizeof(packet_t)) {    
-    LOG_INFO("Received from ");
-    LOG_INFO_LLADDR(src);
-    LOG_INFO_("\n");
+    //LOG_INFO("BORDER - Received from ");
+    //LOG_INFO_LLADDR(src);
+    //LOG_INFO("\n");
 
     int id = get_child_id(src);
     if (id >= 0) {
@@ -178,41 +173,31 @@ void input_callback(const void *data, uint16_t len,
       switch (pkt.msg)
       {
       case DISCOVERY_TYPE:
-        LOG_INFO("A coordinator wants to join");
         if ((next_index+1)*duration>PERIOD-((3*CLOCK_SECOND)/2)) {
-          LOG_INFO("This is getting out of hand, now there are too many of them");
+          //LOG_INFO("HALVING DURATION AS NEW COORDINATOR JOINS");
           duration = duration / 2;
           // 1) add change_dur, 2) postpone sending slot to next turn
         }
         children[next_index++] = *src;
-        //static linkaddr_t coordinator;
-        //coordinator.u8[0] = src->u8[0];
-        //coordinator.u8[1] = src->u8[1];
-        // todo : send slot
-        // todo : adapt slot of other nodes (first, 1 second by slot)
-        //send_pkt(BORDER_NODE, DISCOVERY_TYPE, get_slot(), duration, &coordinator);
         break;      
       case MESSAGE_TYPE:
-        LOG_INFO("A damn coordinator sent some data %u\n", pkt.payload);
-        //printf("Coordinator sent %u\n", pkt.payload);
+        //LOG_INFO("RECEIVED COUNT FROM COORD %u\n", pkt.payload);
         count += pkt.payload;
-        LOG_INFO("cur count on border : %u\n", count);
         break;
       case SYNCHRO_TYPE:
-        LOG_INFO("A coordinator sent some clock");
+        //LOG_INFO("RECEIVED CLOCK \n");
         register_clock(*src, pkt.clock);
       default:
         break;
       }
       break;    
     default:
-      LOG_INFO("Msg from node that ain't coordinator");
+      //LOG_INFO("Msg from node that ain't coordinator\n");
       break;
     }   
   } else {
-    LOG_INFO_("data of unadequate size");
+    //LOG_INFO_("data of unadequate size\n");
   }
-  LOG_INFO_("\n");
 
 }
 /*---------------------------------------------------------------------------*/
@@ -239,8 +224,8 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
     /* 1) SEND SIGNALING MSG "I AM THE BORDER" */
     
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer)); // take time into account
-    LOG_INFO("Border signalling its existence \n");
-    LOG_INFO_LLADDR(NULL);
+    ////LOG_INFO("Border signalling its existence \n");
+    ////LOG_INFO_LLADDR(NULL);
     send_pkt(BORDER_NODE, DISCOVERY_TYPE, 0, duration, NULL);       
     clock_at_bc = clock_time();
     etimer_reset(&periodic_timer);
@@ -253,7 +238,7 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
     for (int i=0; i<next_index; i++) {
       send_slot_pkt(BORDER_NODE, SYNCHRO_TYPE, i, duration, network_clock, &children[i]);
     }
-    LOG_INFO("Current time: %lu ticks\n", (unsigned long)network_clock);
+    ////LOG_INFO("Current time: %lu ticks\n", (unsigned long)network_clock);
 
     /* 3) SEND DATA TO SERVER */
     printf("%u\n", count); 
@@ -266,7 +251,7 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
     etimer_reset(&periodic_timer);
 
     clock_time_t remaining_clock =  PERIOD - (network_clock % PERIOD);
-    LOG_INFO("REMAIN time %lu, #coord %u\n", remaining_clock, next_index);
+    ////LOG_INFO("REMAIN time %lu, #coord %u\n", remaining_clock, next_index);
     etimer_set(&periodic_timer, PERIOD-(CLOCK_SECOND/2) + remaining_clock); // wait an additional time to not go too fast
   }
 
