@@ -151,7 +151,9 @@
   <plugin>
     org.contikios.cooja.plugins.Notes
     <plugin_config>
-      <notes>Enter notes here</notes>
+      <notes>1 : border
+        2 : coordinator
+        3, 4 : sensors</notes>
       <decorations>true</decorations>
     </plugin_config>
     <bounds x="680" y="0" height="160" width="656" z="3" />
