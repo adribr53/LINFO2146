@@ -117,8 +117,6 @@ void dead_child(int child_id) {
   for (int i = child_id; i < number_of_children; i++){
     children[i]=children[i+1];
   }
-  // Shift the last element to the left (DON'T WORK => linkaddr_t != int)
-  //if (children[number_of_children-1] != 0x00) {children[number_of_children-1] = 0x00}
   number_of_children--;
 }
 
@@ -137,15 +135,8 @@ void set_wait_slot_time() {
   //PERIOD;
   clock_time_t start_clock = slot*duration; // replace by duration
   clock_time_t current_clock =  network_clock % PERIOD;
-  /*if (current_clock<PERIOD/2) {
-    LOG_INFO("cur clock in begin of period\n");
-    wait_slot = (start_clock>current_clock) ? (start_clock-current_clock) : 0;
-  } else {
-    LOG_INFO("cur clock in end of period\n");
-    wait_slot = start_clock + (PERIOD-current_clock);
-  }*/
   wait_slot = start_clock + (PERIOD-current_clock);
-  LOG_INFO("wait : %lu\n", (long unsigned) wait_slot);
+  LOG_INFO("COORDINATOR - wait before taking its slot is : %lu\n", (long unsigned) wait_slot);
   
 }
 
@@ -179,88 +170,59 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
     case DISCOVERY_TYPE:
       //LOG_INFO("Discovery");
       switch (pkt.node) {
-        case BORDER_NODE:
-          LOG_INFO("From border");
+        case BORDER_NODE: {
           static linkaddr_t border;
           border.u8[0] = src->u8[0];
           border.u8[1] = src->u8[1];
           duration = pkt.clock;
           if (!linkaddr_cmp(dest, &linkaddr_node_addr)) { // BC
             if (!has_parent) {
-              //LOG_INFO("For the first time");                
-              //has_parent = 1;                
+              LOG_INFO("COORDINATOR - LEARNS ABOUT BORDER, RESPOND TO IT\n");                
               send_pkt(COORDINATOR_NODE, DISCOVERY_TYPE, 0, 0, &border);
             } else {            
-            //  LOG_INFO("Not the first time");
-              // todo send clock                
-              if (network_clock>0) { // node has a say
-                // was set last when receiving a clock from border
+              if (network_clock>0) { 
                 clock_time_t clock_at_recomp = clock_time();
-                LOG_INFO("recomp : %lu bc :%lu\n", clock_at_recomp, clock_at_bc);
+                LOG_INFO("COORDINATOR - GIVES ITS CLOCK TO BORDER : %lu\n",  network_clock+clock_at_recomp-clock_at_bc);
                 send_pkt(COORDINATOR_NODE, SYNCHRO_TYPE, 0, network_clock+clock_at_recomp-clock_at_bc, &border);
               }
             }
-          } else { // coordinator was given a slot !
-              LOG_INFO("received a slot : %u", pkt.payload); // duration : in timestamp, slot number : in payload                              
-              memcpy(&parent, src, sizeof(linkaddr_t));
-              has_parent = 1;
-              parent_last_update = clock_time();
-              slot = pkt.payload;
-              //duration = pkt.clock;
-              process_poll(&check_parent_process);
-          }
-          break;          
-          
-                 
-        case SENSOR_NODE:
-          LOG_INFO("From sensor\n");
+          } 
+          break;  
+        }                                   
+        case SENSOR_NODE: {
           if (has_parent) {
             if(!linkaddr_cmp(dest, &linkaddr_node_addr)) {
               // broadcast
-              LOG_INFO("Received a BC");  
+              LOG_INFO("COORDINATOR - RECEIVES BROADCAST FROM SENSOR\n");  
               static linkaddr_t sensor;
               sensor.u8[0] = src->u8[0];
               sensor.u8[1] = src->u8[1];   
               send_pkt(COORDINATOR_NODE, DISCOVERY_TYPE, 0, 0, &sensor);
             } else {
               // unicast
-              LOG_INFO("Received a unicast => ADD to children ");
+              LOG_INFO("COORDINATOR - A SENSOR JOINED HIM\n");
               children[number_of_children] = *src;
               children_last_update[number_of_children] = clock_time();
               LOG_INFO_LLADDR(children + number_of_children);
               number_of_children++;
             }        
           }
-        case COORDINATOR_NODE:
-          //LOG_INFO("From Coordinator");      
-        default:
+          break;
+        }  
+        case COORDINATOR_NODE: {
+          LOG_INFO("COORDINATOR - RECEIVED SMT From Coordinator\n");      
+        }
+        default: {
           break;
         }
+      }
       break;
-    case MESSAGE_TYPE:
-      // LOG_INFO("Message");
-      if ((number_of_children > 0) && get_child_id(src) >= 0) {
-        //  right child respond
+    case MESSAGE_TYPE:      
+      if ((number_of_children > 0) && get_child_id(src) >= 0) {      
         total_count += pkt.payload;
         received_values++;
-        printf("Received value %u from child\n", pkt.payload);
-      } // TODO: else => child still alive
-      // count = count + pkt.payload; // should come from sensor that's 
-      break;
-    case SYNCHRO_TYPE:
-      if (has_parent) {
-        printf("Received synchro\n");
-        clock_at_bc =  clock_time();
-        //LOG_INFO("received his clock");
-        // todo : clock management
-        // static struct etimer synchro_timer;      
-        network_clock = pkt.clock;        
-        // set_wait();
-        received_clock = 1;      
-        // process_poll(&nullnet_example_process);
-        printf("Duration of the clock %lu \n", duration);
-        process_poll(&nullnet_example_process);
-      }
+        LOG_INFO("COORDINATOR - Received value %u from SENSOR\n", pkt.payload);
+      } 
       break;
     default:
       // Discard
@@ -274,14 +236,11 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
     parent_last_update = clock_time();
     static slot_packet_t slot_pkt;
     memcpy(&slot_pkt, data, sizeof(slot_packet_t));
-    clock_at_bc =  clock_time();
-    //LOG_INFO("received his clock");
-    // todo : clock management
-    // static struct etimer synchro_timer;      
+    clock_at_bc =  clock_time();   
     network_clock = slot_pkt.clock;        
     duration = slot_pkt.duration;
     slot = slot_pkt.payload;
-    LOG_INFO("Received Slot : %u, Duration : %lu, Netclock %lu\n", slot, duration, network_clock);
+    LOG_INFO("COORDINATOR - FROM BORDER \n Received Slot : %u, Duration : %lu, Netclock %lu\n", slot, duration, network_clock);
     received_clock = 1;
     if (!has_parent) {
       has_parent = 1;
@@ -307,8 +266,6 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
   nullnet_set_input_callback(input_callback);
       
   send_pkt(UNDEFINED_NODE, DISCOVERY_TYPE, 0, 0, &linkaddr_node_addr);
-  printf("MY COORDINATOR IS HERE\n");
-  LOG_INFO("MY COORDINATOR IS HERE\n");
   while(1) {
     if (!received_clock) {      
       PROCESS_YIELD();
@@ -319,13 +276,12 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
         etimer_set(&periodic_timer, wait_slot);
         PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
         // In the slot => prepare actions
-        printf("In the slot\n");
         is_in_slot = 1;
         must_respond_before = clock_time() + duration;
         child_duration = duration / (number_of_children + 1);
         if (number_of_children > 0) {
             starting_child = current_child;
-            printf("Sending request to the first child %d\n", starting_child);
+            LOG_INFO("COORDINATOR - ask first SENSOR %d\n", starting_child);
             LOG_INFO_LLADDR(&(children[current_child]));
             send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_duration, &(children[current_child]));
         }
@@ -334,40 +290,37 @@ PROCESS_THREAD(nullnet_example_process, ev, data) {
         if (has_parent) {
           if (number_of_children > 0) {
             if (clock_time() < (must_respond_before - ((5*child_duration/4)))) {
-              printf("have the time => askip sensors\n");
+              LOG_INFO("COORDINATOR -  ask SENSOR\n");
 
-              current_child = (current_child + 1) % number_of_children;
-              printf("Current : %d starting : %d, number %d\n", current_child, starting_child, received_values);
+              current_child = (current_child + 1) % number_of_children;              
               if (received_values ==number_of_children) {
-                printf("All child respond => send data to border\n");
-                LOG_INFO("total_count at send : %u\n",total_count);
+                LOG_INFO("COORDINATOR - All responded => data count at send : %u\n", total_count);
                 send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count, 0, &parent);
                 received_clock = 0;
                 total_count = 0;
                 is_in_slot = 0;
                 received_values = 0;
               } else {
-                if (current_child != starting_child) {
-                  printf("Ask the next child for his count\n");
+                if (current_child != starting_child) {                  
                   send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, child_duration, &children[current_child]);
                 }
               }
               
             } else {
-              printf("not enough time => repond to border\n");
+              printf("COORDINATOR - not enough time remains => respond to border\n");
               send_pkt(OWN_TYPE, MESSAGE_TYPE, total_count, 0, &parent);
               total_count = 0;
               is_in_slot = 0;
               received_clock = 0;
               received_values = 0;
             }
-            printf("Waiting %lu time\n", child_duration);
+            printf("COORDINATOR - Waiting %lu time\n", child_duration);
             etimer_set(&periodic_timer, child_duration);
             PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
 
           } else {
             // TODO: send to parent
-            printf("No child => just send 0\n");
+            printf("COORDINATOR - No child => just send 0\n");
             send_pkt(OWN_TYPE, MESSAGE_TYPE, 0, 0, &parent);
             is_in_slot = 0;
             received_clock = 0;
@@ -390,7 +343,7 @@ PROCESS_THREAD(check_parent_process, ev, data) {
     if (!has_parent) {
       PROCESS_YIELD();
     } else {
-      LOG_INFO("CHECKING IF BORDER STILL THERE");
+      LOG_INFO("COORDINATOR - CHECKING IF BORDER STILL THERE\n");
       if (clock_time() > (parent_last_update + (5*PERIOD))) {
         dead_parent();
       }

@@ -133,8 +133,6 @@ void dead_child(int child_id) {
   for (int i = child_id; i < next_index; i++){
     children[i]=children[i+1];
   }
-  // Shift the last element to the left (DON'T WORK => linkaddr_t != int)
-  //if (children[number_of_children-1] != 0x00) {children[number_of_children-1] = 0x00}
   next_index--;
 }
 
