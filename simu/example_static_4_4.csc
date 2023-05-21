@@ -77,9 +77,9 @@
     <motetype>
       org.contikios.cooja.mspmote.Z1MoteType
       <description>border</description>
-      <source>[CONFIG_DIR]/examples/border_proto/border_proto.c</source>
-      <commands>make -j$(CPUS) border_proto.z1 TARGET=z1</commands>
-      <firmware>[CONFIG_DIR]/examples/border_proto/build/z1/border_proto.z1</firmware>
+      <source>[CONFIG_DIR]/examples/my_border/border.c</source>
+      <commands>make -j$(CPUS) border.z1 TARGET=z1</commands>
+      <firmware>[CONFIG_DIR]/examples/my_border/build/z1/border.z1</firmware>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.RimeAddress</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.IPAddress</moteinterface>
